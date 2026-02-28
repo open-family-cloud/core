@@ -10,7 +10,8 @@
       "WebFetch(domain:developers.cloudflare.com)",
       "Bash(pre-commit run:*)",
       "Bash(gh run:*)",
-      "Bash(terraform fmt:*)"
+      "Bash(terraform fmt:*)",
+      "Bash(chmod +x:*)"
     ]
   }
 }
