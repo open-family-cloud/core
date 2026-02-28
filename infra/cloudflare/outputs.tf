@@ -3,8 +3,8 @@
 output "subdomain_records" {
   description = "作成されたサブドメインレコードの FQDN リスト"
   value = {
-    for key, record in cloudflare_record.subdomains : key => {
-      fqdn    = record.hostname
+    for key, record in cloudflare_dns_record.subdomains : key => {
+      fqdn    = "${record.name}.${var.domain}"
       proxied = record.proxied
     }
   }
@@ -13,8 +13,8 @@ output "subdomain_records" {
 output "root_record" {
   description = "ルートドメインレコード"
   value = {
-    fqdn    = cloudflare_record.root.hostname
-    proxied = cloudflare_record.root.proxied
+    fqdn    = var.domain
+    proxied = cloudflare_dns_record.root.proxied
   }
 }
 

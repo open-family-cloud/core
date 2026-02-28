@@ -22,7 +22,7 @@ locals {
 }
 
 # --- サブドメイン A レコード ---
-resource "cloudflare_record" "subdomains" {
+resource "cloudflare_dns_record" "subdomains" {
   for_each = module.dns_records.records
 
   zone_id = var.zone_id
@@ -45,7 +45,7 @@ locals {
 }
 
 # --- ルートドメイン A レコード ---
-resource "cloudflare_record" "root" {
+resource "cloudflare_dns_record" "root" {
   zone_id = var.zone_id
   name    = "@"
   content = var.vps_ip
@@ -59,7 +59,7 @@ resource "cloudflare_record" "root" {
 # ============================================================
 
 # --- MX レコード ---
-resource "cloudflare_record" "mx" {
+resource "cloudflare_dns_record" "mx" {
   count = var.enable_mail_dns ? 1 : 0
 
   zone_id  = var.zone_id
@@ -71,7 +71,7 @@ resource "cloudflare_record" "mx" {
 }
 
 # --- SPF レコード ---
-resource "cloudflare_record" "spf" {
+resource "cloudflare_dns_record" "spf" {
   count = var.enable_mail_dns ? 1 : 0
 
   zone_id = var.zone_id
@@ -82,7 +82,7 @@ resource "cloudflare_record" "spf" {
 }
 
 # --- DMARC レコード ---
-resource "cloudflare_record" "dmarc" {
+resource "cloudflare_dns_record" "dmarc" {
   count = var.enable_mail_dns ? 1 : 0
 
   zone_id = var.zone_id
@@ -93,7 +93,7 @@ resource "cloudflare_record" "dmarc" {
 }
 
 # --- DKIM レコード ---
-resource "cloudflare_record" "dkim" {
+resource "cloudflare_dns_record" "dkim" {
   count = var.enable_mail_dns && var.mail_dkim_record != "" ? 1 : 0
 
   zone_id = var.zone_id
