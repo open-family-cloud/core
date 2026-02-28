@@ -6,7 +6,9 @@
       "WebSearch",
       "WebFetch(domain:registry.terraform.io)",
       "WebFetch(domain:docs.vultr.com)",
-      "WebFetch(domain:www.linode.com)"
+      "WebFetch(domain:www.linode.com)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "Bash(pre-commit run:*)"
     ]
   }
 }
