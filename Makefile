@@ -11,6 +11,16 @@ install-tools: ## 開発ツールをインストール
 	pre-commit install
 	go install mvdan.cc/sh/v3/cmd/shfmt@latest
 	sudo apt-get install -y bats argon2
+	@# AWS CLI (Vultr S3 バケット作成に必要)
+	@if ! command -v aws >/dev/null 2>&1; then \
+		echo "--- AWS CLI をインストール中 ---"; \
+		curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$$(uname -m).zip" -o /tmp/awscliv2.zip; \
+		unzip -qo /tmp/awscliv2.zip -d /tmp/; \
+		sudo /tmp/aws/install --update; \
+		rm -rf /tmp/awscliv2.zip /tmp/aws; \
+	else \
+		echo "--- AWS CLI は既にインストール済み: $$(aws --version) ---"; \
+	fi
 	@# Terraform (HashiCorp 公式 APT リポジトリ)
 	@if ! command -v terraform >/dev/null 2>&1; then \
 		echo "--- Terraform をインストール中 ---"; \
