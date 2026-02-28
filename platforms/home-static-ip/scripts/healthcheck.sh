@@ -150,28 +150,28 @@ echo ""
 
 # --- HTTP エンドポイント ---
 echo "■ HTTP エンドポイント"
-check_url "Nextcloud"   "https://cloud.${DOMAIN}/status.php"
-check_url "Element"     "https://chat.${DOMAIN}"
-check_url "Synapse"     "https://matrix.${DOMAIN}/_matrix/client/versions"
-check_url "Jitsi Meet"  "https://meet.${DOMAIN}"
-check_url "Jellyfin"    "https://media.${DOMAIN}/health"
+check_url "Nextcloud" "https://cloud.${DOMAIN}/status.php"
+check_url "Element" "https://chat.${DOMAIN}"
+check_url "Synapse" "https://matrix.${DOMAIN}/_matrix/client/versions"
+check_url "Jitsi Meet" "https://meet.${DOMAIN}"
+check_url "Jellyfin" "https://media.${DOMAIN}/health"
 check_url "Vaultwarden" "https://vault.${DOMAIN}/alive"
 echo ""
 
 # --- メールポート ---
 echo "■ メールポート（ローカル）"
-check_port "SMTP"       "localhost" 25
+check_port "SMTP" "localhost" 25
 check_port "Submission" "localhost" 587
-check_port "IMAPS"      "localhost" 993
+check_port "IMAPS" "localhost" 993
 echo ""
 
 # --- ポートフォワーディング到達確認 ---
 echo "■ ポートフォワーディング（外部からの到達確認）"
-check_port_forwarding "HTTPS"      443  tcp
-check_port_forwarding "SMTP"       25   tcp
-check_port_forwarding "Submission" 587  tcp
-check_port_forwarding "IMAPS"      993  tcp
-check_port_forwarding "JVB"        "${JVB_PORT:-10000}" udp
+check_port_forwarding "HTTPS" 443 tcp
+check_port_forwarding "SMTP" 25 tcp
+check_port_forwarding "Submission" 587 tcp
+check_port_forwarding "IMAPS" 993 tcp
+check_port_forwarding "JVB" "${JVB_PORT:-10000}" udp
 echo ""
 
 # --- データベース ---
@@ -204,13 +204,13 @@ echo ""
 # --- TLS 証明書 ---
 echo "■ TLS 証明書"
 CERT_EXPIRY=$(echo | openssl s_client -servername "cloud.${DOMAIN}" \
-    -connect "cloud.${DOMAIN}:443" 2>/dev/null | \
-    openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
+    -connect "cloud.${DOMAIN}:443" 2>/dev/null \
+    | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
 
 if [[ -n "$CERT_EXPIRY" ]]; then
     EXPIRY_EPOCH=$(date -d "$CERT_EXPIRY" +%s 2>/dev/null || echo 0)
     NOW_EPOCH=$(date +%s)
-    DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+    DAYS_LEFT=$(((EXPIRY_EPOCH - NOW_EPOCH) / 86400))
 
     if [[ "$DAYS_LEFT" -gt 14 ]]; then
         echo -e "  ${OFC_GREEN}✓${OFC_NC} 有効期限: ${CERT_EXPIRY} (残り ${DAYS_LEFT} 日)"

@@ -61,7 +61,7 @@ if [[ "${JELLYFIN_MEDIA}" == /mnt/s3/* ]]; then
         S3_BUCKET_JELLYFIN="${S3_BUCKET_JELLYFIN:?S3_BUCKET_JELLYFIN が未設定です}"
 
         mkdir -p /root/.config/rclone
-        cat > /root/.config/rclone/rclone.conf <<RCLONE_EOF
+        cat >/root/.config/rclone/rclone.conf <<RCLONE_EOF
 [jellyfin-s3]
 type = s3
 provider = Other
@@ -76,7 +76,7 @@ RCLONE_EOF
         sed -e "s|MOUNT_PATH_PLACEHOLDER|${JELLYFIN_MEDIA}|g" \
             -e "s|BUCKET_PLACEHOLDER|${S3_BUCKET_JELLYFIN}|g" \
             "${PROJECT_ROOT}/config/rclone/rclone-jellyfin.service" \
-            > /etc/systemd/system/rclone-jellyfin.service
+            >/etc/systemd/system/rclone-jellyfin.service
 
         systemctl daemon-reload
         systemctl enable rclone-jellyfin.service

@@ -17,7 +17,7 @@ render_traefik_config() {
     local input="${1:-${PROJECT_ROOT}/config/traefik/traefik.yml}"
     local output="${2:-$input}"
 
-    sed "s|\${ACME_EMAIL}|${ACME_EMAIL}|g" "$input" > "${output}.tmp"
+    sed "s|\${ACME_EMAIL}|${ACME_EMAIL}|g" "$input" >"${output}.tmp"
     mv "${output}.tmp" "$output"
     log "Traefik 設定を生成しました: $output"
 }
@@ -42,7 +42,7 @@ render_synapse_config() {
         -e "s|S3_ACCESS_KEY_PLACEHOLDER|${S3_ACCESS_KEY}|g" \
         -e "s|S3_SECRET_KEY_PLACEHOLDER|${S3_SECRET_KEY}|g" \
         -e "s|S3_REGION_PLACEHOLDER|${S3_REGION}|g" \
-        "${input}.bak" > "$output"
+        "${input}.bak" >"$output"
     log "Synapse 設定を生成しました: $output"
 }
 
@@ -53,7 +53,7 @@ render_element_config() {
     local input="${1:-${PROJECT_ROOT}/config/element/config.json}"
     local output="${2:-$input}"
 
-    sed "s|DOMAIN_PLACEHOLDER|${DOMAIN}|g" "$input" > "${output}.tmp"
+    sed "s|DOMAIN_PLACEHOLDER|${DOMAIN}|g" "$input" >"${output}.tmp"
     mv "${output}.tmp" "$output"
     log "Element 設定を生成しました: $output"
 }
@@ -65,7 +65,7 @@ render_ldap_config() {
     local input="${1:-${PROJECT_ROOT}/config/ldap/bootstrap/01-structure.ldif}"
     local output="${2:-$input}"
 
-    sed "s|LDAP_BASE_DN_PLACEHOLDER|${LDAP_BASE_DN}|g" "$input" > "${output}.tmp"
+    sed "s|LDAP_BASE_DN_PLACEHOLDER|${LDAP_BASE_DN}|g" "$input" >"${output}.tmp"
     mv "${output}.tmp" "$output"
     log "LDAP 設定を生成しました: $output"
 }

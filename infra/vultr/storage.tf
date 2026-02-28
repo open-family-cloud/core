@@ -2,11 +2,11 @@
 
 # --- Block Storage ---
 resource "vultr_block_storage" "ofc" {
-  label               = var.block_storage_label
-  region              = var.region
-  size_gb             = var.block_storage_size_gb
+  label                = var.block_storage_label
+  region               = var.region
+  size_gb              = var.block_storage_size_gb
   attached_to_instance = vultr_instance.ofc.id
-  live                = true
+  live                 = true
 }
 
 # --- Object Storage ---

@@ -14,9 +14,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 INFRA_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # --- 色付きログ ---
-log()  { echo -e "\033[0;32m[BOOTSTRAP]\033[0m $*"; }
+log() { echo -e "\033[0;32m[BOOTSTRAP]\033[0m $*"; }
 warn() { echo -e "\033[0;33m[BOOTSTRAP]\033[0m $*"; }
-err()  { echo -e "\033[0;31m[BOOTSTRAP]\033[0m $*" >&2; }
+err() { echo -e "\033[0;31m[BOOTSTRAP]\033[0m $*" >&2; }
 
 # --- 一時ファイルのクリーンアップ ---
 TMPFILE=""
@@ -94,8 +94,11 @@ set_defaults() {
     # パターンに応じたプラットフォームディレクトリ
     case "$DEPLOY_PATTERN" in
         compose) PLATFORM_SUBDIR="platforms/vps-compose" ;;
-        k8s)     PLATFORM_SUBDIR="platforms/vps-k8s" ;;
-        *)       err "DEPLOY_PATTERN は 'compose' または 'k8s'"; exit 1 ;;
+        k8s) PLATFORM_SUBDIR="platforms/vps-k8s" ;;
+        *)
+            err "DEPLOY_PATTERN は 'compose' または 'k8s'"
+            exit 1
+            ;;
     esac
 }
 
@@ -103,7 +106,7 @@ set_defaults() {
 cidrs_to_hcl() {
     local input="$1"
     local result=""
-    IFS=',' read -ra parts <<< "$input"
+    IFS=',' read -ra parts <<<"$input"
     for cidr in "${parts[@]}"; do
         cidr="$(echo "$cidr" | xargs)"
         [[ -n "$result" ]] && result+=", "
@@ -117,7 +120,7 @@ cidrs_to_hcl() {
 # ============================================================
 
 generate_vultr_tfvars() {
-    cat > "$INFRA_DIR/vultr/terraform.tfvars" <<EOF
+    cat >"$INFRA_DIR/vultr/terraform.tfvars" <<EOF
 vultr_api_key             = "$VULTR_API_KEY"
 domain                    = "$DOMAIN"
 region                    = "$VULTR_REGION"
@@ -135,7 +138,7 @@ EOF
 }
 
 generate_linode_tfvars() {
-    cat > "$INFRA_DIR/linode/terraform.tfvars" <<EOF
+    cat >"$INFRA_DIR/linode/terraform.tfvars" <<EOF
 linode_token            = "$LINODE_TOKEN"
 domain                  = "$DOMAIN"
 region                  = "$LINODE_REGION"
@@ -156,7 +159,7 @@ deploy_compute() {
     log "Phase 1/3: $PROVIDER インフラを構築中..."
 
     case "$PROVIDER" in
-        vultr)  generate_vultr_tfvars ;;
+        vultr) generate_vultr_tfvars ;;
         linode) generate_linode_tfvars ;;
     esac
 
@@ -347,7 +350,7 @@ deploy_application() {
 
     log ".env を転送中..."
     TMPFILE=$(mktemp)
-    generate_dotenv > "$TMPFILE"
+    generate_dotenv >"$TMPFILE"
     scp_cmd "$TMPFILE" "${SSH_USER}@${VPS_IP}:~/core/${PLATFORM_SUBDIR}/.env"
 
     log "setup.sh を実行中 (サービス起動)..."
@@ -429,17 +432,26 @@ main() {
 
     # プロバイダ別バリデーション
     case "$PROVIDER" in
-        vultr)  validate_config VULTR_API_KEY ;;
+        vultr) validate_config VULTR_API_KEY ;;
         linode) validate_config LINODE_TOKEN LINODE_ROOT_PASS ;;
-        *)      err "PROVIDER は 'vultr' または 'linode'"; exit 1 ;;
+        *)
+            err "PROVIDER は 'vultr' または 'linode'"
+            exit 1
+            ;;
     esac
 
     # ツール確認
     for cmd in terraform jq ssh scp; do
-        command -v "$cmd" &>/dev/null || { err "$cmd が見つかりません"; exit 1; }
+        command -v "$cmd" &>/dev/null || {
+            err "$cmd が見つかりません"
+            exit 1
+        }
     done
     if [[ "$PROVIDER" == "vultr" ]]; then
-        command -v aws &>/dev/null || { err "aws-cli が見つかりません (Vultr S3 バケット作成に必要)"; exit 1; }
+        command -v aws &>/dev/null || {
+            err "aws-cli が見つかりません (Vultr S3 バケット作成に必要)"
+            exit 1
+        }
     fi
 
     echo ""

@@ -55,7 +55,7 @@ sed -e "s|WG_CLIENT_PRIVATE_KEY_PLACEHOLDER|${WG_CLIENT_PRIVATE_KEY}|g" \
     -e "s|VPS_IP_PLACEHOLDER|${VPS_IP}|g" \
     -e "s|WG_SERVER_PORT_PLACEHOLDER|${WG_SERVER_PORT}|g" \
     -e "s|WG_SERVER_IP_PLACEHOLDER|${WG_SERVER_IP}|g" \
-    "${WG_CONF_DIR}/wg0.conf.example" > "${WG_CONF_DIR}/wg0.conf"
+    "${WG_CONF_DIR}/wg0.conf.example" >"${WG_CONF_DIR}/wg0.conf"
 
 chmod 600 "${WG_CONF_DIR}/wg0.conf"
 log "WireGuard クライアント設定の生成: OK"

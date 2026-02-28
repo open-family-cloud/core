@@ -18,9 +18,9 @@ readonly OFC_NC='\033[0m'
 # ログ関数（ラベルはソース側で上書き可能）
 OFC_LOG_LABEL="${OFC_LOG_LABEL:-OFC}"
 
-log()  { echo -e "${OFC_GREEN}[${OFC_LOG_LABEL}]${OFC_NC} $*"; }
+log() { echo -e "${OFC_GREEN}[${OFC_LOG_LABEL}]${OFC_NC} $*"; }
 warn() { echo -e "${OFC_YELLOW}[${OFC_LOG_LABEL} WARN]${OFC_NC} $*"; }
-err()  { echo -e "${OFC_RED}[${OFC_LOG_LABEL} ERROR]${OFC_NC} $*" >&2; }
+err() { echo -e "${OFC_RED}[${OFC_LOG_LABEL} ERROR]${OFC_NC} $*" >&2; }
 info() { echo -e "${OFC_CYAN}[${OFC_LOG_LABEL} INFO]${OFC_NC} $*"; }
 
 # プロジェクトルート検出

@@ -46,7 +46,7 @@ sed -e "s|WG_SERVER_PRIVATE_KEY_PLACEHOLDER|${WG_SERVER_PRIVATE_KEY}|g" \
     -e "s|WG_SERVER_PORT_PLACEHOLDER|${WG_SERVER_PORT}|g" \
     -e "s|WG_CLIENT_PUBLIC_KEY_PLACEHOLDER|${WG_CLIENT_PUBLIC_KEY}|g" \
     -e "s|WG_CLIENT_IP_PLACEHOLDER|${WG_CLIENT_IP}|g" \
-    "${WG_CONF_DIR}/wg0.conf.example" > "${WG_CONF_DIR}/wg0.conf"
+    "${WG_CONF_DIR}/wg0.conf.example" >"${WG_CONF_DIR}/wg0.conf"
 
 chmod 600 "${WG_CONF_DIR}/wg0.conf"
 log "WireGuard サーバー設定の生成: OK"
@@ -68,8 +68,8 @@ mkdir -p "$DYNAMIC_DIR"
 for f in "$DYNAMIC_DIR"/*.yml; do
     [[ -f "$f" ]] || continue
     sed -i -e "s|DOMAIN_PLACEHOLDER|${DOMAIN}|g" \
-           -e "s|WG_CLIENT_IP_PLACEHOLDER|${WG_CLIENT_IP}|g" \
-           "$f"
+        -e "s|WG_CLIENT_IP_PLACEHOLDER|${WG_CLIENT_IP}|g" \
+        "$f"
 done
 log "Traefik 動的設定: OK"
 

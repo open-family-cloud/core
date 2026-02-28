@@ -35,7 +35,8 @@ ldap_user_add() {
     fi
 
     local ldif
-    ldif=$(cat <<EOF
+    ldif=$(
+        cat <<EOF
 dn: uid=${uid},ou=users,${LDAP_BASE_DN}
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
@@ -47,7 +48,7 @@ sn: ${sn}
 mail: ${mail}
 userPassword: ${password}
 EOF
-)
+    )
 
     # shellcheck disable=SC2086
     echo "$ldif" | $LDAP_EXEC_CMD ldapadd \
@@ -55,13 +56,14 @@ EOF
 
     # family グループに追加
     local modify_ldif
-    modify_ldif=$(cat <<EOF
+    modify_ldif=$(
+        cat <<EOF
 dn: cn=family,ou=groups,${LDAP_BASE_DN}
 changetype: modify
 add: member
 member: uid=${uid},ou=users,${LDAP_BASE_DN}
 EOF
-)
+    )
 
     # shellcheck disable=SC2086
     echo "$modify_ldif" | $LDAP_EXEC_CMD ldapmodify \
@@ -90,8 +92,8 @@ ldap_user_list() {
         -x -D "cn=admin,${LDAP_BASE_DN}" -w "${LDAP_ADMIN_PASSWORD}" \
         -b "ou=users,${LDAP_BASE_DN}" \
         "(objectClass=inetOrgPerson)" \
-        uid cn mail 2>/dev/null | \
-    awk '
+        uid cn mail 2>/dev/null \
+        | awk '
     /^dn:/ { if (uid) printf "  %-15s %-30s %s\n", uid, mail, cn; uid=""; mail=""; cn="" }
     /^uid:/ { uid=$2 }
     /^cn:/ { sub(/^cn: /, ""); cn=$0 }
@@ -113,13 +115,14 @@ ldap_user_delete() {
 
     # family グループから削除
     local modify_ldif
-    modify_ldif=$(cat <<EOF
+    modify_ldif=$(
+        cat <<EOF
 dn: cn=family,ou=groups,${LDAP_BASE_DN}
 changetype: modify
 delete: member
 member: uid=${uid},ou=users,${LDAP_BASE_DN}
 EOF
-)
+    )
     # shellcheck disable=SC2086
     echo "$modify_ldif" | $LDAP_EXEC_CMD ldapmodify \
         -x -D "cn=admin,${LDAP_BASE_DN}" -w "${LDAP_ADMIN_PASSWORD}" 2>/dev/null || true

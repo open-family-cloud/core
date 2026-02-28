@@ -62,9 +62,9 @@ if [[ -d "$BACKUP_LOCAL" ]]; then
     # メールデータも NAS にバックアップ
     if [[ -d "${MAIL_STORAGE_PATH}/data" ]]; then
         log "メールデータを NAS にバックアップ中..."
-        rsync -a --delete "${MAIL_STORAGE_PATH}/data/" "${LOCAL_DEST}/mail-data/" 2>/dev/null || \
-            cp -a "${MAIL_STORAGE_PATH}/data" "${LOCAL_DEST}/mail-data" 2>/dev/null || \
-            warn "メールデータのコピーに失敗しました"
+        rsync -a --delete "${MAIL_STORAGE_PATH}/data/" "${LOCAL_DEST}/mail-data/" 2>/dev/null \
+            || cp -a "${MAIL_STORAGE_PATH}/data" "${LOCAL_DEST}/mail-data" 2>/dev/null \
+            || warn "メールデータのコピーに失敗しました"
     fi
 
     log "NAS ローカルバックアップ: OK (${LOCAL_DEST})"

@@ -81,9 +81,9 @@ cleanup_old_backups() {
 
     if [[ "$count" -gt "$keep" ]]; then
         log "古いバックアップを整理中（${keep} 世代保持）..."
-        find "$BACKUP_BASE" -maxdepth 1 -mindepth 1 -type d | \
-            sort | head -n -"${keep}" | \
-            while read -r dir; do
+        find "$BACKUP_BASE" -maxdepth 1 -mindepth 1 -type d \
+            | sort | head -n -"${keep}" \
+            | while read -r dir; do
                 rm -rf "$dir"
                 log "  削除: $(basename "$dir")"
             done

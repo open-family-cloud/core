@@ -33,7 +33,7 @@ dump_postgres() {
     for db in "${POSTGRES_NEXTCLOUD_DB}" "${POSTGRES_SYNAPSE_DB}" "${POSTGRES_VAULTWARDEN_DB}"; do
         # shellcheck disable=SC2086
         $BACKUP_EXEC_CMD $BACKUP_PG_TARGET pg_dump -U postgres -Fc "$db" \
-            > "${backup_dir}/postgres-${db}.dump"
+            >"${backup_dir}/postgres-${db}.dump"
         log "  ${db}: $(du -sh "${backup_dir}/postgres-${db}.dump" | cut -f1)"
     done
 }
@@ -45,7 +45,7 @@ dump_ldap() {
     log "OpenLDAP をダンプ中..."
 
     # shellcheck disable=SC2086
-    $BACKUP_EXEC_CMD $BACKUP_LDAP_TARGET slapcat -n 1 > "${backup_dir}/ldap-data.ldif"
+    $BACKUP_EXEC_CMD $BACKUP_LDAP_TARGET slapcat -n 1 >"${backup_dir}/ldap-data.ldif"
     log "  LDAP: $(du -sh "${backup_dir}/ldap-data.ldif" | cut -f1)"
 }
 
@@ -79,8 +79,8 @@ backup_vaultwarden() {
     log "Vaultwarden データをコピー中..."
 
     # shellcheck disable=SC2086
-    docker cp "${BACKUP_VW_TARGET}:/data" "${backup_dir}/vaultwarden-data" 2>/dev/null || \
-        warn "Vaultwarden データのコピーに失敗（初回起動前の可能性）"
+    docker cp "${BACKUP_VW_TARGET}:/data" "${backup_dir}/vaultwarden-data" 2>/dev/null \
+        || warn "Vaultwarden データのコピーに失敗（初回起動前の可能性）"
 }
 
 # restic を使った S3 アップロード

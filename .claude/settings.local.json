@@ -8,7 +8,9 @@
       "WebFetch(domain:docs.vultr.com)",
       "WebFetch(domain:www.linode.com)",
       "WebFetch(domain:developers.cloudflare.com)",
-      "Bash(pre-commit run:*)"
+      "Bash(pre-commit run:*)",
+      "Bash(gh run:*)",
+      "Bash(terraform fmt:*)"
     ]
   }
 }

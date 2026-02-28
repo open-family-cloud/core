@@ -43,8 +43,8 @@ log "Deployment を再起動中..."
 kubectl rollout restart deployment --namespace=ofc
 
 log "ローリングアップデートを待機中..."
-kubectl rollout status deployment --namespace=ofc --timeout=300s || \
-    warn "一部の Deployment がまだ更新中です"
+kubectl rollout status deployment --namespace=ofc --timeout=300s \
+    || warn "一部の Deployment がまだ更新中です"
 
 # ----------------------------------------------------------
 # 4. ヘルスチェック
