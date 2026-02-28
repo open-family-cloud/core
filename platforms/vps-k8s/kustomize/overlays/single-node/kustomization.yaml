@@ -1,0 +1,37 @@
+# single-node overlay — VPS 1台向け
+# リソース制限を追加、レプリカは1固定
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: ofc
+
+patches:
+  # PostgreSQL にリソース制限を追加
+  - target:
+      kind: Deployment
+      name: postgres
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            memory: 2Gi
+          requests:
+            memory: 512Mi
+            cpu: 250m
+  # Redis にリソース制限を追加
+  - target:
+      kind: Deployment
+      name: redis
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            memory: 256Mi
+          requests:
+            memory: 64Mi
+            cpu: 100m

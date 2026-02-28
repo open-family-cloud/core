@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jitsi-prosody
+  labels:
+    app.kubernetes.io/name: jitsi-prosody
+spec:
+  selector:
+    app.kubernetes.io/name: jitsi-prosody
+  ports:
+    - port: 5222
+      targetPort: 5222
+      name: xmpp-client
+    - port: 5347
+      targetPort: 5347
+      name: xmpp-component

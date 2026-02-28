@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: |
+          shellcheck --severity=warning \
+            scripts/lib/*.sh \
+            scripts/user.sh \
+            scripts/render-templates.sh \
+            config/postgres/init-databases.sh \
+            platforms/vps-compose/scripts/*.sh \
+            platforms/home-static-ip/scripts/*.sh \
+            platforms/home-tunnel/home/scripts/*.sh \
+            platforms/home-tunnel/vps/scripts/*.sh \
+            platforms/vps-k8s/scripts/*.sh
+
+      - name: shfmt
+        run: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          shfmt -i 4 -ci -bn -d \
+            scripts/ \
+            config/postgres/init-databases.sh \
+            platforms/vps-compose/scripts/ \
+            platforms/home-static-ip/scripts/ \
+            platforms/home-tunnel/home/scripts/ \
+            platforms/home-tunnel/vps/scripts/ \
+            platforms/vps-k8s/scripts/
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bats インストール
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: bats テスト実行
+        run: bats --recursive tests/
+
+  terraform:
+    name: Terraform (${{ matrix.provider }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        provider: [vultr, linode, cloudflare]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=infra/${{ matrix.provider }} init -backend=false
+      - run: terraform -chdir=infra/${{ matrix.provider }} validate
+      - run: terraform -chdir=infra/${{ matrix.provider }} fmt -check -recursive

@@ -1,0 +1,11 @@
+# WireGuard サーバー設定（VPS）
+# setup.sh が .env の値で生成します
+
+[Interface]
+PrivateKey = WG_SERVER_PRIVATE_KEY_PLACEHOLDER
+Address = WG_SERVER_IP_PLACEHOLDER/24
+ListenPort = WG_SERVER_PORT_PLACEHOLDER
+
+[Peer]
+PublicKey = WG_CLIENT_PUBLIC_KEY_PLACEHOLDER
+AllowedIPs = WG_CLIENT_IP_PLACEHOLDER/32

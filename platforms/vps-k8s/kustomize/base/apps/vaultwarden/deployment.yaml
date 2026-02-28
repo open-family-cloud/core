@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vaultwarden
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vaultwarden
+        app.kubernetes.io/component: app
+        ofc/network: frontend
+        ofc/network-backend: "true"
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:latest
+          ports:
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: vaultwarden-secret
+          env:
+            - name: SMTP_HOST
+              value: mailserver
+            - name: SMTP_PORT
+              value: "25"
+            - name: SMTP_SECURITY
+              value: "off"
+            - name: LOG_FILE
+              value: /data/vaultwarden.log
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data

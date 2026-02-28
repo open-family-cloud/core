@@ -1,0 +1,12 @@
+# Traefik 動的設定 — 共通セキュリティヘッダー
+
+http:
+  middlewares:
+    security-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"

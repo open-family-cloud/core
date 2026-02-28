@@ -1,0 +1,82 @@
+# ============================================================
+# Open Family Cloud — Override 設定例（パターン3: 自宅サーバー + 固定 IP）
+#
+# このファイルを docker-compose.override.yml にコピーして
+# 家庭ごとのカスタマイズを記述してください。
+#
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # 例1: NAS マウントポイントの変更
+  # ----------------------------------------------------------
+  # mailserver:
+  #   volumes:
+  #     - /mnt/nas2/mail/data:/var/mail
+  #     - /mnt/nas2/mail/state:/var/mail-state
+  #     - /mnt/nas2/mail/logs:/var/log/mail
+  #     - ./mailserver-config/:/tmp/docker-mailserver/
+  #     - traefik-certs:/etc/letsencrypt:ro
+
+  # jellyfin:
+  #   volumes:
+  #     - jellyfin-config:/config
+  #     - jellyfin-cache:/cache
+  #     - /mnt/nas2/media:/media:ro
+
+  # ----------------------------------------------------------
+  # 例2: Jellyfin で GPU トランスコードを有効化（Intel QSV）
+  # ----------------------------------------------------------
+  # jellyfin:
+  #   devices:
+  #     - /dev/dri:/dev/dri
+  #   environment:
+  #     - JELLYFIN_FFmpeg__hardwareAccelerationType=vaapi
+
+  # ----------------------------------------------------------
+  # 例3: Nextcloud の PHP メモリ上限を引き上げ
+  # ----------------------------------------------------------
+  # nextcloud:
+  #   environment:
+  #     - PHP_MEMORY_LIMIT=1024M
+  #     - PHP_UPLOAD_LIMIT=16G
+
+  # ----------------------------------------------------------
+  # 例4: 不要なサービスを無効化
+  # ----------------------------------------------------------
+  # jellyfin:
+  #   profiles:
+  #     - disabled
+  # jitsi-web:
+  #   profiles:
+  #     - disabled
+  # jitsi-prosody:
+  #   profiles:
+  #     - disabled
+  # jitsi-jicofo:
+  #   profiles:
+  #     - disabled
+  # jitsi-jvb:
+  #   profiles:
+  #     - disabled
+
+  # ----------------------------------------------------------
+  # 例5: PostgreSQL のリソース制限
+  # ----------------------------------------------------------
+  # postgres:
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2G
+  #       reservations:
+  #         memory: 512M
+
+  # ----------------------------------------------------------
+  # 例6: DNS challenge を使う場合の Traefik 環境変数
+  # ----------------------------------------------------------
+  # traefik:
+  #   environment:
+  #     - TZ=${TZ}
+  #     - CF_DNS_API_TOKEN=${ACME_DNS_API_TOKEN}

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-jvb
+  labels:
+    app.kubernetes.io/name: jitsi-jvb
+    app.kubernetes.io/component: videobridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jitsi-jvb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jitsi-jvb
+        app.kubernetes.io/component: videobridge
+        ofc/network-jitsi: "true"
+    spec:
+      containers:
+        - name: jvb
+          image: jitsi/jvb:stable
+          ports:
+            - containerPort: 10000
+              protocol: UDP
+          envFrom:
+            - secretRef:
+                name: jitsi-secret

@@ -1,0 +1,30 @@
+{
+    "default_server_config": {
+        "m.homeserver": {
+            "base_url": "https://matrix.DOMAIN_PLACEHOLDER",
+            "server_name": "DOMAIN_PLACEHOLDER"
+        }
+    },
+    "brand": "Open Family Cloud Chat",
+    "integrations_ui_url": "",
+    "integrations_rest_url": "",
+    "disable_custom_urls": true,
+    "disable_guests": true,
+    "disable_3pid_login": false,
+    "default_theme": "light",
+    "room_directory": {
+        "servers": []
+    },
+    "features": {
+        "feature_video_rooms": true
+    },
+    "jitsi": {
+        "preferred_domain": "meet.DOMAIN_PLACEHOLDER"
+    },
+    "element_call": {
+        "url": ""
+    },
+    "setting_defaults": {
+        "breadcrumbs": true
+    }
+}

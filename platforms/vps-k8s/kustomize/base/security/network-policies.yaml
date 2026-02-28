@@ -1,0 +1,72 @@
+# ============================================================
+# NetworkPolicy — Docker Compose の3ネットワーク分離を再現
+#
+# ofc-frontend: Web公開サービス（Ingress からアクセス可能）
+# ofc-backend:  DB/キャッシュ/LDAP（内部のみ）
+# ofc-jitsi:    Jitsi 内部通信（内部のみ）
+# ============================================================
+
+# --- backend ネットワーク分離 ---
+# PostgreSQL / Redis / OpenLDAP は backend ラベルを持つ Pod からのみアクセス可能
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-isolation
+spec:
+  podSelector:
+    matchLabels:
+      ofc/network: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    # backend ラベルを持つ Pod 間の通信を許可
+    - from:
+        - podSelector:
+            matchLabels:
+              ofc/network-backend: "true"
+        - podSelector:
+            matchLabels:
+              ofc/network: backend
+
+---
+# --- Jitsi 内部ネットワーク分離 ---
+# Prosody / Jicofo / JVB は Jitsi ラベルを持つ Pod からのみアクセス可能
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jitsi-isolation
+spec:
+  podSelector:
+    matchLabels:
+      ofc/network-jitsi: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              ofc/network-jitsi: "true"
+
+---
+# --- frontend Pod のデフォルトポリシー ---
+# Ingress Controller と同 namespace 内からのアクセスを許可
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-ingress
+spec:
+  podSelector:
+    matchLabels:
+      ofc/network: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Ingress Controller からのアクセス
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 8008
+        - protocol: TCP
+          port: 8096

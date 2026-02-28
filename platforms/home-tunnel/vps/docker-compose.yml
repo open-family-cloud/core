@@ -1,0 +1,66 @@
+# ============================================================
+# Open Family Cloud — Docker Compose 構成ファイル
+# パターン4: 自宅サーバー + WireGuard トンネル（VPS 側）
+#
+# VPS 側 — TLS 終端 + WireGuard サーバーのみ
+# 全サービスは自宅サーバーで稼働し、VPS はトンネルの入口として機能
+#
+# 家庭ごとの設定は .env ファイルに記述してください。
+# ============================================================
+
+services:
+
+  # ========================================================
+  # リバースプロキシ — Traefik（TLS 終端 → トンネル転送）
+  # ========================================================
+  traefik:
+    image: traefik:v3.2
+    container_name: ofc-vps-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - tunnel
+    environment:
+      - TZ=${TZ}
+
+  # ========================================================
+  # WireGuard サーバー — 自宅サーバーとのトンネル
+  # ========================================================
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: ofc-vps-wireguard
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ./config/wireguard/wg0.conf:/config/wg_confs/wg0.conf:ro
+    ports:
+      - "${WG_SERVER_PORT}:51820/udp"
+    networks:
+      - tunnel
+    sysctls:
+      - net.ipv4.ip_forward=1
+
+# ============================================================
+# ネットワーク
+# ============================================================
+networks:
+  tunnel:
+    name: ofc-tunnel
+    driver: bridge
+
+# ============================================================
+# ボリューム
+# ============================================================
+volumes:
+  traefik-certs:

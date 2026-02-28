@@ -1,0 +1,28 @@
+# メールサーバーは NodePort で外部公開（Ingress 非対応プロトコル）
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailserver
+  labels:
+    app.kubernetes.io/name: mailserver
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: mailserver
+  ports:
+    - port: 25
+      targetPort: 25
+      nodePort: 30025
+      name: smtp
+    - port: 465
+      targetPort: 465
+      nodePort: 30465
+      name: smtps
+    - port: 587
+      targetPort: 587
+      nodePort: 30587
+      name: submission
+    - port: 993
+      targetPort: 993
+      nodePort: 30993
+      name: imaps

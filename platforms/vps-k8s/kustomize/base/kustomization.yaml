@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ofc
+
+resources:
+  - namespace.yaml
+  # インフラストラクチャ
+  - infrastructure/postgres
+  - infrastructure/redis
+  - infrastructure/openldap
+  # アプリケーション
+  - apps/nextcloud
+  - apps/synapse
+  - apps/element
+  - apps/vaultwarden
+  - apps/jellyfin
+  - apps/mailserver
+  - apps/jitsi
+  # セキュリティ
+  - security/network-policies.yaml

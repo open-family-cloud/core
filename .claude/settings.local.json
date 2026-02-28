@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(shellcheck:*)",
+      "Bash(xargs ls:*)",
+      "WebSearch",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:docs.vultr.com)",
+      "WebFetch(domain:www.linode.com)"
+    ]
+  }
+}

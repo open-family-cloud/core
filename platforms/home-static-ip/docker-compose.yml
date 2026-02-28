@@ -1,0 +1,455 @@
+# ============================================================
+# Open Family Cloud — Docker Compose 構成ファイル
+# パターン3: 自宅サーバー + 固定グローバル IP
+#
+# 家庭ごとの設定は .env ファイルに記述してください。
+# サービスの追加・上書きは docker-compose.override.yml で行えます。
+# ============================================================
+
+services:
+
+  # ========================================================
+  # リバースプロキシ — Traefik
+  # ========================================================
+  traefik:
+    image: traefik:v3.2
+    container_name: ofc-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../../config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ../../config/traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - frontend
+    environment:
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+
+  # ========================================================
+  # 認証基盤 — OpenLDAP
+  # ========================================================
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: ofc-openldap
+    restart: unless-stopped
+    environment:
+      LDAP_ORGANISATION: ${LDAP_ORGANISATION}
+      LDAP_DOMAIN: ${LDAP_DOMAIN}
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
+      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
+      LDAP_TLS: "false"
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
+      - ../../config/ldap/bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom:ro
+    networks:
+      - backend
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: ofc-phpldapadmin
+    restart: unless-stopped
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: "false"
+    depends_on:
+      - openldap
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ldapadmin.rule=Host(`ldap.${DOMAIN}`)"
+      - "traefik.http.routers.ldapadmin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ldapadmin.entrypoints=websecure"
+      - "traefik.http.services.ldapadmin.loadbalancer.server.port=80"
+
+  # ========================================================
+  # データベース — PostgreSQL（共有）
+  # ========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: ofc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../../config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================
+  # キャッシュ — Redis（共有）
+  # ========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ofc-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================
+  # メールサーバー — docker-mailserver
+  # ========================================================
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    container_name: ofc-mailserver
+    hostname: mail.${DOMAIN}
+    restart: unless-stopped
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - ${MAIL_STORAGE_PATH}/data:/var/mail
+      - ${MAIL_STORAGE_PATH}/state:/var/mail-state
+      - ${MAIL_STORAGE_PATH}/logs:/var/log/mail
+      - ./mailserver-config/:/tmp/docker-mailserver/
+      - traefik-certs:/etc/letsencrypt:ro
+    environment:
+      - ENABLE_RSPAMD=1
+      - ENABLE_CLAMAV=0
+      - ENABLE_FAIL2BAN=1
+      - SSL_TYPE=letsencrypt
+      - PERMIT_DOCKER=network
+      - LDAP_SERVER_HOST=ldap://openldap
+      - LDAP_SEARCH_BASE=${LDAP_BASE_DN}
+      - LDAP_BIND_DN=cn=admin,${LDAP_BASE_DN}
+      - LDAP_BIND_PW=${LDAP_ADMIN_PASSWORD}
+      - LDAP_QUERY_FILTER_USER=(&(mail=%s)(objectClass=inetOrgPerson))
+      - LDAP_QUERY_FILTER_GROUP=(&(mailGroupMember=%s)(objectClass=groupOfNames))
+      - LDAP_QUERY_FILTER_ALIAS=(&(mailAlias=%s)(objectClass=inetOrgPerson))
+      - LDAP_QUERY_FILTER_DOMAIN=(mail=*@%s)
+      - ACCOUNT_PROVISIONER=LDAP
+      - TZ=${TZ}
+    depends_on:
+      - openldap
+      - traefik
+    networks:
+      - frontend
+      - backend
+    cap_add:
+      - NET_ADMIN
+
+  # ========================================================
+  # チャット — Matrix Synapse
+  # ========================================================
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: ofc-synapse
+    restart: unless-stopped
+    volumes:
+      - synapse-data:/data
+      - ../../config/synapse/homeserver.yaml:/data/homeserver.yaml:ro
+      - ../../config/synapse/log.config:/data/log.config:ro
+    environment:
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+      - TZ=${TZ}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      openldap:
+        condition: service_started
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.synapse.rule=Host(`matrix.${DOMAIN}`)"
+      - "traefik.http.routers.synapse.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.synapse.entrypoints=websecure"
+      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
+
+  # ========================================================
+  # チャット UI — Element Web
+  # ========================================================
+  element:
+    image: vectorim/element-web:latest
+    container_name: ofc-element
+    restart: unless-stopped
+    volumes:
+      - ../../config/element/config.json:/app/config.json:ro
+    networks:
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.element.rule=Host(`chat.${DOMAIN}`)"
+      - "traefik.http.routers.element.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.element.entrypoints=websecure"
+      - "traefik.http.services.element.loadbalancer.server.port=80"
+
+  # ========================================================
+  # オンライン会議 — Jitsi Meet
+  # ========================================================
+  jitsi-web:
+    image: jitsi/web:stable
+    container_name: ofc-jitsi-web
+    restart: unless-stopped
+    volumes:
+      - jitsi-web-config:/config
+      - jitsi-transcripts:/usr/share/jitsi-meet/transcripts
+    environment:
+      - PUBLIC_URL=https://meet.${DOMAIN}
+      - TZ=${TZ}
+      - ENABLE_AUTH=1
+      - AUTH_TYPE=ldap
+      - LDAP_URL=ldap://openldap
+      - LDAP_BASE=${LDAP_BASE_DN}
+      - LDAP_BINDDN=cn=admin,${LDAP_BASE_DN}
+      - LDAP_BINDPW=${LDAP_ADMIN_PASSWORD}
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      - LDAP_AUTH_METHOD=bind
+      - LDAP_USE_TLS=0
+    depends_on:
+      - openldap
+    networks:
+      - frontend
+      - jitsi-internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jitsi.rule=Host(`meet.${DOMAIN}`)"
+      - "traefik.http.routers.jitsi.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.jitsi.entrypoints=websecure"
+      - "traefik.http.services.jitsi.loadbalancer.server.port=80"
+
+  jitsi-prosody:
+    image: jitsi/prosody:stable
+    container_name: ofc-jitsi-prosody
+    restart: unless-stopped
+    volumes:
+      - jitsi-prosody-config:/config
+      - jitsi-prosody-plugins:/prosody-plugins-custom
+    environment:
+      - PUBLIC_URL=https://meet.${DOMAIN}
+      - TZ=${TZ}
+      - ENABLE_AUTH=1
+      - AUTH_TYPE=ldap
+      - LDAP_URL=ldap://openldap
+      - LDAP_BASE=${LDAP_BASE_DN}
+      - LDAP_BINDDN=cn=admin,${LDAP_BASE_DN}
+      - LDAP_BINDPW=${LDAP_ADMIN_PASSWORD}
+      - LDAP_FILTER=(objectClass=inetOrgPerson)
+      - LDAP_AUTH_METHOD=bind
+      - LDAP_USE_TLS=0
+      - JICOFO_COMPONENT_SECRET=${JITSI_SECRET_JICOFO_COMPONENT}
+      - JICOFO_AUTH_PASSWORD=${JITSI_SECRET_JICOFO_AUTH}
+      - JVB_AUTH_PASSWORD=${JITSI_SECRET_JVB_AUTH}
+    networks:
+      - jitsi-internal
+
+  jitsi-jicofo:
+    image: jitsi/jicofo:stable
+    container_name: ofc-jitsi-jicofo
+    restart: unless-stopped
+    volumes:
+      - jitsi-jicofo-config:/config
+    environment:
+      - TZ=${TZ}
+      - JICOFO_COMPONENT_SECRET=${JITSI_SECRET_JICOFO_COMPONENT}
+      - JICOFO_AUTH_PASSWORD=${JITSI_SECRET_JICOFO_AUTH}
+    depends_on:
+      - jitsi-prosody
+    networks:
+      - jitsi-internal
+
+  jitsi-jvb:
+    image: jitsi/jvb:stable
+    container_name: ofc-jitsi-jvb
+    restart: unless-stopped
+    ports:
+      - "${JVB_PORT}:${JVB_PORT}/udp"
+    volumes:
+      - jitsi-jvb-config:/config
+    environment:
+      - TZ=${TZ}
+      - JVB_AUTH_PASSWORD=${JITSI_SECRET_JVB_AUTH}
+      - JVB_ADVERTISE_IPS=${JVB_ADVERTISE_IP}
+      - JVB_PORT=${JVB_PORT}
+    depends_on:
+      - jitsi-prosody
+    networks:
+      - jitsi-internal
+
+  # ========================================================
+  # ファイルストレージ + カレンダー — Nextcloud
+  # ========================================================
+  nextcloud:
+    image: nextcloud:29-apache
+    container_name: ofc-nextcloud
+    restart: unless-stopped
+    volumes:
+      - nextcloud-app:/var/www/html
+      - ../../config/nextcloud/custom.config.php:/var/www/html/config/custom.config.php:ro
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_NEXTCLOUD_DB}
+      - POSTGRES_USER=${POSTGRES_NEXTCLOUD_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_NEXTCLOUD_PASSWORD}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_PROXIES=traefik
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITEHOST=cloud.${DOMAIN}
+      - REDIS_HOST=redis
+      - SMTP_HOST=mailserver
+      - SMTP_PORT=25
+      - SMTP_AUTHTYPE=
+      - MAIL_FROM_ADDRESS=cloud
+      - MAIL_DOMAIN=${DOMAIN}
+      - TZ=${TZ}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      openldap:
+        condition: service_started
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`cloud.${DOMAIN}`)"
+      - "traefik.http.routers.nextcloud.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud-redirectregex,nextcloud-headers"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav"
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav"
+      - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true"
+
+  # ========================================================
+  # メディアサーバー — Jellyfin
+  # ========================================================
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: ofc-jellyfin
+    restart: unless-stopped
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      - ${JELLYFIN_MEDIA_PATH}:/media:ro
+    environment:
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=https://media.${DOMAIN}
+    networks:
+      - frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`media.${DOMAIN}`)"
+      - "traefik.http.routers.jellyfin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+
+  # ========================================================
+  # パスワード管理 — Vaultwarden
+  # ========================================================
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: ofc-vaultwarden
+    restart: unless-stopped
+    volumes:
+      - vaultwarden-data:/data
+    environment:
+      - DOMAIN=https://vault.${DOMAIN}
+      - DATABASE_URL=postgresql://${POSTGRES_VAULTWARDEN_USER}:${POSTGRES_VAULTWARDEN_PASSWORD}@postgres/${POSTGRES_VAULTWARDEN_DB}
+      - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED}
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - LOG_FILE=/data/vaultwarden.log
+      - SMTP_HOST=mailserver
+      - SMTP_FROM=vault@${DOMAIN}
+      - SMTP_PORT=25
+      - SMTP_SECURITY=off
+      - TZ=${TZ}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vaultwarden.rule=Host(`vault.${DOMAIN}`)"
+      - "traefik.http.routers.vaultwarden.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.vaultwarden.entrypoints=websecure"
+      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+
+  # ========================================================
+  # ブルートフォース防御 — Fail2ban
+  # ========================================================
+  fail2ban:
+    image: lscr.io/linuxserver/fail2ban:latest
+    container_name: ofc-fail2ban
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ../../config/fail2ban/filter.d:/config/fail2ban/filter.d:ro
+      - ../../config/fail2ban/jail.d:/config/fail2ban/jail.d:ro
+      - nextcloud-app:/remotelogs/nextcloud:ro
+      - vaultwarden-data:/remotelogs/vaultwarden:ro
+    environment:
+      - TZ=${TZ}
+
+# ============================================================
+# ネットワーク
+# ============================================================
+networks:
+  frontend:
+    name: ofc-frontend
+    driver: bridge
+  backend:
+    name: ofc-backend
+    driver: bridge
+    internal: true
+  jitsi-internal:
+    name: ofc-jitsi
+    driver: bridge
+    internal: true
+
+# ============================================================
+# ボリューム
+# ============================================================
+volumes:
+  traefik-certs:
+  ldap-data:
+  ldap-config:
+  postgres-data:
+  redis-data:
+  synapse-data:
+  nextcloud-app:
+  jellyfin-config:
+  jellyfin-cache:
+  vaultwarden-data:
+  jitsi-web-config:
+  jitsi-prosody-config:
+  jitsi-prosody-plugins:
+  jitsi-jicofo-config:
+  jitsi-jvb-config:
+  jitsi-transcripts:

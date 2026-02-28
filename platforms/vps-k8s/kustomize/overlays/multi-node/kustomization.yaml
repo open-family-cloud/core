@@ -1,0 +1,27 @@
+# multi-node overlay — 複数ノード向け
+# Pod Anti-Affinity を追加して可用性を向上
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: ofc
+
+patches:
+  # Element は複数レプリカ可能（ステートレス）
+  - target:
+      kind: Deployment
+      name: element
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  # Jitsi Web も複数レプリカ可能
+  - target:
+      kind: Deployment
+      name: jitsi-web
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2

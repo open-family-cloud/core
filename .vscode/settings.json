@@ -1,0 +1,28 @@
+{
+  "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+
+  "[shellscript]": {
+    "editor.defaultFormatter": "mkhl.shfmt",
+    "editor.tabSize": 4
+  },
+  "shfmt.arguments": ["-i", "4", "-ci", "-bn"],
+
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2
+  },
+
+  "[json][jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.tabSize": 2
+  },
+
+  "[markdown]": {
+    "editor.formatOnSave": false
+  },
+
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.eol": "\n"
+}

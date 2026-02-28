@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap
+  labels:
+    app.kubernetes.io/name: openldap
+    app.kubernetes.io/component: identity
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openldap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openldap
+        app.kubernetes.io/component: identity
+        ofc/network: backend
+    spec:
+      containers:
+        - name: openldap
+          image: osixia/openldap:1.5.0
+          ports:
+            - containerPort: 389
+          envFrom:
+            - secretRef:
+                name: ldap-secret
+          env:
+            - name: LDAP_TLS
+              value: "false"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/ldap
+            - name: config
+              mountPath: /etc/ldap/slapd.d
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ldap-data
+        - name: config
+          persistentVolumeClaim:
+            claimName: ldap-config

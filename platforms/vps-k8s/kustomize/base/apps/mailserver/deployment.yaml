@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailserver
+  labels:
+    app.kubernetes.io/name: mailserver
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mailserver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mailserver
+        app.kubernetes.io/component: app
+        ofc/network: frontend
+        ofc/network-backend: "true"
+    spec:
+      containers:
+        - name: mailserver
+          image: ghcr.io/docker-mailserver/docker-mailserver:latest
+          ports:
+            - containerPort: 25
+              name: smtp
+            - containerPort: 465
+              name: smtps
+            - containerPort: 587
+              name: submission
+            - containerPort: 993
+              name: imaps
+          envFrom:
+            - secretRef:
+                name: mailserver-secret
+          env:
+            - name: ENABLE_RSPAMD
+              value: "1"
+            - name: ENABLE_CLAMAV
+              value: "0"
+            - name: ENABLE_FAIL2BAN
+              value: "0"
+            - name: PERMIT_DOCKER
+              value: network
+            - name: ACCOUNT_PROVISIONER
+              value: LDAP
+          volumeMounts:
+            - name: mail-data
+              mountPath: /var/mail
+            - name: mail-state
+              mountPath: /var/mail-state
+            - name: mail-logs
+              mountPath: /var/log/mail
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+      volumes:
+        - name: mail-data
+          persistentVolumeClaim:
+            claimName: mail-data
+        - name: mail-state
+          persistentVolumeClaim:
+            claimName: mail-state
+        - name: mail-logs
+          emptyDir: {}

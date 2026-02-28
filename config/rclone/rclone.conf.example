@@ -1,0 +1,15 @@
+# ============================================================
+# rclone — S3 接続設定テンプレート
+# setup.sh が .env の値をもとに自動生成します。
+# 手動で設定する場合はこのファイルを rclone.conf にコピーしてください。
+# ============================================================
+
+[jellyfin-s3]
+type = s3
+provider = Other
+env_auth = false
+access_key_id = YOUR_S3_ACCESS_KEY
+secret_access_key = YOUR_S3_SECRET_KEY
+endpoint = YOUR_S3_ENDPOINT
+region = YOUR_S3_REGION
+acl = private

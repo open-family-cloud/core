@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: element
+  labels:
+    app.kubernetes.io/name: element
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - chat.DOMAIN_PLACEHOLDER
+      secretName: element-tls
+  rules:
+    - host: chat.DOMAIN_PLACEHOLDER
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: element
+                port:
+                  number: 80

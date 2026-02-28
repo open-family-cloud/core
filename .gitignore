@@ -1,0 +1,57 @@
+# ============================================================
+# Open Family Cloud — Git 管理対象外
+# ============================================================
+
+# 家庭ごとの設定（機密情報を含む）
+.env
+docker-compose.override.yml
+
+# 生成された設定ファイル（setup.sh で再生成可能）
+# ※ テンプレート（*_PLACEHOLDER を含むもの）はリポジトリ管理
+config/synapse/homeserver.yaml.bak
+config/synapse/signing.key
+config/synapse/*.signing.key
+
+# rclone 設定（機密情報を含む）
+config/rclone/rclone.conf
+
+# TLS 証明書
+config/traefik/certs/
+
+# mailserver ランタイムデータ
+platforms/*/mailserver-config/
+platforms/*/home/mailserver-config/
+
+# WireGuard 生成済み設定（機密情報を含む）
+platforms/home-tunnel/home/config/wireguard/wg0.conf
+platforms/home-tunnel/vps/config/wireguard/wg0.conf
+
+# ランタイムデータ
+*.log
+*.pid
+*.sock
+
+# エディタ
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# Terraform
+infra/bootstrap.conf
+infra/*/.terraform/
+infra/*/.terraform.lock.hcl
+infra/*/terraform.tfstate*
+infra/*/terraform.tfvars
+infra/*/*.auto.tfvars
+infra/*/crash.log
+
+# Claude Code
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db

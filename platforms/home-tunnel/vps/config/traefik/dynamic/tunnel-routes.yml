@@ -1,0 +1,75 @@
+# Traefik 動的設定 — WireGuard トンネル経由のルーティング
+# VPS の Traefik が TLS を終端し、自宅サーバーの Traefik へ転送
+#
+# WG_CLIENT_IP はセットアップ時に .env の値で置換されます
+
+http:
+  routers:
+    # Nextcloud
+    nextcloud:
+      rule: "Host(`cloud.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Element (Matrix チャット UI)
+    element:
+      rule: "Host(`chat.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Matrix Synapse
+    synapse:
+      rule: "Host(`matrix.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Jitsi Meet
+    jitsi:
+      rule: "Host(`meet.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Jellyfin
+    jellyfin:
+      rule: "Host(`media.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # Vaultwarden
+    vaultwarden:
+      rule: "Host(`vault.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+    # phpLDAPadmin
+    ldapadmin:
+      rule: "Host(`ldap.DOMAIN_PLACEHOLDER`)"
+      service: home-server
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    home-server:
+      loadBalancer:
+        servers:
+          - url: "http://WG_CLIENT_IP_PLACEHOLDER:80"

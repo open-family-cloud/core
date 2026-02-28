@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi-web
+  labels:
+    app.kubernetes.io/name: jitsi-web
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jitsi-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jitsi-web
+        app.kubernetes.io/component: web
+        ofc/network: frontend
+        ofc/network-jitsi: "true"
+    spec:
+      containers:
+        - name: web
+          image: jitsi/web:stable
+          ports:
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: jitsi-secret
+          env:
+            - name: ENABLE_AUTH
+              value: "1"
+            - name: AUTH_TYPE
+              value: ldap
+            - name: LDAP_URL
+              value: ldap://openldap
+            - name: LDAP_AUTH_METHOD
+              value: bind
+            - name: LDAP_USE_TLS
+              value: "0"

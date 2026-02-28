@@ -1,0 +1,25 @@
+# ============================================================
+# Open Family Cloud — LDAP 初期構造
+#
+# ユーザーとグループの OU を作成します。
+# 実際のユーザー追加は phpLDAPadmin か ldapadd で行ってください。
+# ============================================================
+
+# ユーザー格納用 OU
+dn: ou=users,LDAP_BASE_DN_PLACEHOLDER
+objectClass: organizationalUnit
+ou: users
+description: Open Family Cloud Users
+
+# グループ格納用 OU
+dn: ou=groups,LDAP_BASE_DN_PLACEHOLDER
+objectClass: organizationalUnit
+ou: groups
+description: Open Family Cloud Groups
+
+# 全ユーザーが属するグループ
+dn: cn=family,ou=groups,LDAP_BASE_DN_PLACEHOLDER
+objectClass: groupOfNames
+cn: family
+description: All family members
+member: cn=admin,LDAP_BASE_DN_PLACEHOLDER

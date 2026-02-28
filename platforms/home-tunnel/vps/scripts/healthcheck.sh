@@ -1,0 +1,200 @@
+#!/bin/bash
+# ============================================================
+# Open Family Cloud — パターン4: VPS 側ヘルスチェック
+# Traefik + WireGuard トンネル + TLS の状態を確認します
+# ============================================================
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLATFORM_DIR="$(dirname "$SCRIPT_DIR")"
+export PLATFORM_DIR
+
+OFC_LOG_LABEL="HEALTH-VPS"
+# shellcheck source=../../../../scripts/lib/common.sh
+source "$PLATFORM_DIR/../../../scripts/lib/common.sh"
+# shellcheck source=../../../../scripts/lib/env.sh
+source "$PLATFORM_DIR/../../../scripts/lib/env.sh"
+
+load_env
+
+PASS=0
+FAIL=0
+WARN=0
+
+check_container() {
+    local name=$1
+    local status
+    status=$(docker inspect --format='{{.State.Status}}' "$name" 2>/dev/null || echo "not_found")
+
+    if [[ "$status" = "running" ]]; then
+        echo -e "  ${OFC_GREEN}✓${OFC_NC} $name"
+        ((PASS++))
+    else
+        echo -e "  ${OFC_RED}✗${OFC_NC} $name (status: $status)"
+        ((FAIL++))
+    fi
+}
+
+check_url() {
+    local label=$1
+    local url=$2
+    local expected_code=${3:-200}
+
+    local code
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" 2>/dev/null || echo "000")
+
+    if [[ "$code" = "$expected_code" ]]; then
+        echo -e "  ${OFC_GREEN}✓${OFC_NC} ${label} (HTTP ${code})"
+        ((PASS++))
+    elif [[ "$code" = "000" ]]; then
+        echo -e "  ${OFC_RED}✗${OFC_NC} ${label} (接続不可)"
+        ((FAIL++))
+    else
+        echo -e "  ${OFC_YELLOW}△${OFC_NC} ${label} (HTTP ${code}, expected ${expected_code})"
+        ((WARN++))
+    fi
+}
+
+check_port() {
+    local label=$1
+    local host=$2
+    local port=$3
+
+    if timeout 5 bash -c "echo >/dev/tcp/${host}/${port}" 2>/dev/null; then
+        echo -e "  ${OFC_GREEN}✓${OFC_NC} ${label} (port ${port})"
+        ((PASS++))
+    else
+        echo -e "  ${OFC_RED}✗${OFC_NC} ${label} (port ${port} unreachable)"
+        ((FAIL++))
+    fi
+}
+
+echo ""
+echo "===== Open Family Cloud VPS ヘルスチェック ====="
+echo "$(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
+# --- コンテナ状態 ---
+echo "■ コンテナ状態"
+check_container ofc-vps-traefik
+check_container ofc-vps-wireguard
+echo ""
+
+# --- WireGuard トンネル ---
+echo "■ WireGuard トンネル"
+WG_CLIENT="${WG_CLIENT_IP:-10.100.0.2}"
+
+if docker inspect --format='{{.State.Status}}' ofc-vps-wireguard 2>/dev/null | grep -q running; then
+    # 自宅サーバーへのトンネル疎通確認
+    if docker exec ofc-vps-wireguard ping -c 1 -W 3 "$WG_CLIENT" &>/dev/null; then
+        echo -e "  ${OFC_GREEN}✓${OFC_NC} 自宅サーバーへの疎通 (${WG_CLIENT})"
+        ((PASS++))
+    else
+        echo -e "  ${OFC_RED}✗${OFC_NC} 自宅サーバーへの疎通 (${WG_CLIENT}) — トンネル切断の可能性"
+        ((FAIL++))
+    fi
+
+    # WireGuard ハンドシェイク確認
+    LAST_HANDSHAKE=$(docker exec ofc-vps-wireguard wg show wg0 latest-handshakes 2>/dev/null | awk '{print $2}' || echo "0")
+    if [[ "$LAST_HANDSHAKE" != "0" && -n "$LAST_HANDSHAKE" ]]; then
+        NOW=$(date +%s)
+        DIFF=$((NOW - LAST_HANDSHAKE))
+        if [[ "$DIFF" -lt 180 ]]; then
+            echo -e "  ${OFC_GREEN}✓${OFC_NC} WireGuard ハンドシェイク (${DIFF}秒前)"
+            ((PASS++))
+        else
+            echo -e "  ${OFC_YELLOW}△${OFC_NC} WireGuard ハンドシェイク (${DIFF}秒前 — 古い可能性)"
+            ((WARN++))
+        fi
+    else
+        echo -e "  ${OFC_YELLOW}△${OFC_NC} WireGuard ハンドシェイク情報なし（自宅サーバー未接続の可能性）"
+        ((WARN++))
+    fi
+
+    # WireGuard ポートの確認
+    check_port "WireGuard UDP" "localhost" "${WG_SERVER_PORT:-51820}"
+else
+    echo -e "  ${OFC_RED}✗${OFC_NC} ofc-vps-wireguard コンテナが起動していません"
+    ((FAIL++))
+fi
+echo ""
+
+# --- ポート確認 ---
+echo "■ 公開ポート"
+check_port "HTTP"  "localhost" 80
+check_port "HTTPS" "localhost" 443
+echo ""
+
+# --- HTTP エンドポイント（TLS 終端経由）---
+echo "■ HTTP エンドポイント（TLS 終端経由）"
+check_url "Nextcloud"   "https://cloud.${DOMAIN}/status.php"
+check_url "Element"     "https://chat.${DOMAIN}"
+check_url "Synapse"     "https://matrix.${DOMAIN}/_matrix/client/versions"
+check_url "Jitsi Meet"  "https://meet.${DOMAIN}"
+check_url "Jellyfin"    "https://media.${DOMAIN}/health"
+check_url "Vaultwarden" "https://vault.${DOMAIN}/alive"
+echo ""
+
+# --- TLS 証明書 ---
+echo "■ TLS 証明書"
+CERT_EXPIRY=$(echo | openssl s_client -servername "cloud.${DOMAIN}" \
+    -connect "cloud.${DOMAIN}:443" 2>/dev/null | \
+    openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
+
+if [[ -n "$CERT_EXPIRY" ]]; then
+    EXPIRY_EPOCH=$(date -d "$CERT_EXPIRY" +%s 2>/dev/null || echo 0)
+    NOW_EPOCH=$(date +%s)
+    DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+
+    if [[ "$DAYS_LEFT" -gt 14 ]]; then
+        echo -e "  ${OFC_GREEN}✓${OFC_NC} 有効期限: ${CERT_EXPIRY} (残り ${DAYS_LEFT} 日)"
+        ((PASS++))
+    elif [[ "$DAYS_LEFT" -gt 0 ]]; then
+        echo -e "  ${OFC_YELLOW}△${OFC_NC} 有効期限: ${CERT_EXPIRY} (残り ${DAYS_LEFT} 日 — 要確認)"
+        ((WARN++))
+    else
+        echo -e "  ${OFC_RED}✗${OFC_NC} 証明書が期限切れです"
+        ((FAIL++))
+    fi
+else
+    echo -e "  ${OFC_YELLOW}△${OFC_NC} 証明書を確認できませんでした（DNS 未設定の可能性）"
+    ((WARN++))
+fi
+echo ""
+
+# --- ディスク使用率 ---
+echo "■ ディスク使用率"
+DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | tr -d '%')
+if [[ "$DISK_USAGE" -lt 80 ]]; then
+    echo -e "  ${OFC_GREEN}✓${OFC_NC} システム SSD: ${DISK_USAGE}% 使用中"
+    ((PASS++))
+elif [[ "$DISK_USAGE" -lt 95 ]]; then
+    echo -e "  ${OFC_YELLOW}△${OFC_NC} システム SSD: ${DISK_USAGE}% 使用中（80% 超過）"
+    ((WARN++))
+else
+    echo -e "  ${OFC_RED}✗${OFC_NC} システム SSD: ${DISK_USAGE}% 使用中（危険）"
+    ((FAIL++))
+fi
+echo ""
+
+# --- Docker リソース ---
+echo "■ Docker リソース"
+DOCKER_DISK=$(docker system df --format '{{.Size}}' 2>/dev/null | head -1 || echo "N/A")
+echo "  使用ディスク: ${DOCKER_DISK}"
+echo ""
+
+# --- サマリー ---
+echo "==========================================="
+TOTAL=$((PASS + FAIL + WARN))
+echo -e "結果: ${OFC_GREEN}${PASS} 成功${OFC_NC} / ${OFC_RED}${FAIL} 失敗${OFC_NC} / ${OFC_YELLOW}${WARN} 警告${OFC_NC} (全${TOTAL}項目)"
+
+if [[ "$FAIL" -gt 0 ]]; then
+    echo -e "${OFC_RED}問題が検出されました。上記のログを確認してください。${OFC_NC}"
+    exit 1
+elif [[ "$WARN" -gt 0 ]]; then
+    echo -e "${OFC_YELLOW}△ 警告があります。確認を推奨します。${OFC_NC}"
+    exit 0
+else
+    echo -e "${OFC_GREEN}✓ すべて正常です${OFC_NC}"
+    exit 0
+fi

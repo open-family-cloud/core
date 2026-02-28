@@ -1,0 +1,13 @@
+# WireGuard クライアント設定（自宅サーバー）
+# setup.sh が .env の値で生成します
+
+[Interface]
+PrivateKey = WG_CLIENT_PRIVATE_KEY_PLACEHOLDER
+Address = WG_CLIENT_IP_PLACEHOLDER/24
+DNS = 1.1.1.1
+
+[Peer]
+PublicKey = WG_SERVER_PUBLIC_KEY_PLACEHOLDER
+Endpoint = VPS_IP_PLACEHOLDER:WG_SERVER_PORT_PLACEHOLDER
+AllowedIPs = WG_SERVER_IP_PLACEHOLDER/32
+PersistentKeepalive = 25

@@ -1,0 +1,27 @@
+# ============================================================
+# rclone mount — Jellyfin S3 メディア用 systemd ユニット
+# setup.sh がプレースホルダーを置換して /etc/systemd/system/ に配置します
+# ============================================================
+
+[Unit]
+Description=rclone mount for Jellyfin media (S3)
+After=network-online.target
+Wants=network-online.target
+Before=docker.service
+
+[Service]
+Type=notify
+ExecStartPre=/bin/mkdir -p MOUNT_PATH_PLACEHOLDER
+ExecStart=/usr/bin/rclone mount jellyfin-s3:BUCKET_PLACEHOLDER MOUNT_PATH_PLACEHOLDER \
+    --read-only \
+    --allow-other \
+    --vfs-cache-mode full \
+    --vfs-cache-max-size 5G \
+    --log-level INFO \
+    --log-file /var/log/rclone-jellyfin.log
+ExecStop=/bin/fusermount -uz MOUNT_PATH_PLACEHOLDER
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

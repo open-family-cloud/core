@@ -1,0 +1,34 @@
+# Vultr — 設定例
+# このファイルをコピーして terraform.tfvars として編集してください
+# cp terraform.tfvars.example terraform.tfvars
+
+# === 認証 ===
+# Vultr API キー (https://my.vultr.com/settings/#settingsapi)
+# 環境変数 VULTR_API_KEY でも設定可能
+vultr_api_key = "your-vultr-api-key"
+
+# === 基本設定 ===
+domain         = "family.example.com"
+region         = "nrt"           # 東京
+deploy_pattern = "compose"       # "compose" または "k8s"
+
+# === SSH ===
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# === VPS ===
+vps_plan  = "vc2-2c-4gb"        # 2 vCPU / 4 GB RAM (compose 用)
+# vps_plan = "vc2-4c-8gb"       # 4 vCPU / 8 GB RAM (k8s 用)
+vps_label = "ofc-server"
+vps_os_id = 2284                # Ubuntu 24.04 LTS
+
+# === Block Storage ===
+block_storage_size_gb = 40
+
+# === Object Storage ===
+object_storage_cluster_id = "nrt1"
+# s3_bucket_prefix        = ""     # 空ならドメイン名ベース (example.com → example-com)
+
+# === Firewall ===
+# SSH を特定の IP に制限する場合:
+# allowed_ssh_cidrs = ["203.0.113.0/32"]
+allowed_ssh_cidrs = ["0.0.0.0/0"]

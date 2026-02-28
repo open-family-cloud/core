@@ -1,0 +1,34 @@
+# Cloudflare — 設定例
+# このファイルをコピーして terraform.tfvars として編集してください
+# cp terraform.tfvars.example terraform.tfvars
+
+# === 認証 ===
+# Cloudflare API トークン (https://dash.cloudflare.com/profile/api-tokens)
+# 必要な権限: Zone.Zone (Read) + Zone.DNS (Edit)
+# 環境変数 CLOUDFLARE_API_TOKEN でも設定可能
+cloudflare_api_token = "your-cloudflare-api-token"
+
+# === ゾーン ===
+# Cloudflare ダッシュボード → 対象ドメイン → 概要 → ゾーン ID
+zone_id = "your-zone-id"
+domain  = "example.com"
+
+# === VPS IP ===
+# Vultr/Linode の terraform output から取得:
+#   cd ../vultr && terraform output -raw vps_public_ip
+vps_ip = "203.0.113.1"
+
+# === DNS レコード ===
+# subdomains = ["cloud", "chat", "matrix", "meet", "media", "vault", "ldap", "mail"]
+
+# Cloudflare プロキシ (CDN/WAF) — メール系ポートが通らなくなるため注意
+# mail サブドメインは自動的にプロキシ無効
+proxied = false
+
+# 特定のサブドメインだけプロキシを有効にする場合:
+# proxied_subdomains = ["cloud", "vault"]
+
+# === メール DNS レコード (任意) ===
+# mailserver セットアップ後に有効化
+enable_mail_dns = false
+# mail_dkim_record = "v=DKIM1; k=rsa; p=MIGf..."

@@ -1,0 +1,92 @@
+# Matrix Synapse — ホームサーバー設定
+# setup.sh 実行時に .env の値で生成されます
+
+server_name: "SYNAPSE_SERVER_NAME_PLACEHOLDER"
+pid_file: /data/homeserver.pid
+web_client_location: "https://chat.DOMAIN_PLACEHOLDER"
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+# --- データベース ---
+database:
+  name: psycopg2
+  args:
+    user: "POSTGRES_SYNAPSE_USER_PLACEHOLDER"
+    password: "POSTGRES_SYNAPSE_PASSWORD_PLACEHOLDER"
+    database: "POSTGRES_SYNAPSE_DB_PLACEHOLDER"
+    host: postgres
+    cp_min: 5
+    cp_max: 10
+
+# --- Redis キャッシュ ---
+redis:
+  enabled: true
+  host: redis
+  port: 6379
+
+# --- メディアストレージ ---
+media_store_path: "/data/media_store"
+max_upload_size: "100M"
+url_preview_enabled: true
+
+# S3 メディアストレージプロバイダー（synapse-s3-storage-provider）
+# 初期セットアップ後に有効化してください
+# media_storage_providers:
+#   - module: s3_storage_provider.S3StorageProviderBackend
+#     store_local: true
+#     store_remote: true
+#     store_synchronous: true
+#     config:
+#       bucket: "S3_BUCKET_SYNAPSE_PLACEHOLDER"
+#       endpoint_url: "S3_ENDPOINT_PLACEHOLDER"
+#       access_key_id: "S3_ACCESS_KEY_PLACEHOLDER"
+#       secret_access_key: "S3_SECRET_KEY_PLACEHOLDER"
+#       region_name: "S3_REGION_PLACEHOLDER"
+
+# --- 登録 ---
+enable_registration: false
+enable_registration_without_verification: false
+
+# --- LDAP 認証 ---
+modules:
+  - module: "ldap_auth_provider.LdapAuthProviderModule"
+    config:
+      enabled: true
+      uri: "ldap://openldap:389"
+      start_tls: false
+      base: "LDAP_BASE_DN_PLACEHOLDER"
+      attributes:
+        uid: "uid"
+        mail: "mail"
+        name: "cn"
+      bind_dn: "cn=admin,LDAP_BASE_DN_PLACEHOLDER"
+      bind_password: "LDAP_ADMIN_PASSWORD_PLACEHOLDER"
+      filter: "(objectClass=inetOrgPerson)"
+
+# --- メール通知 ---
+email:
+  smtp_host: mailserver
+  smtp_port: 25
+  notif_from: "Matrix <matrix@DOMAIN_PLACEHOLDER>"
+
+# --- Federation ---
+# 家族内のみで使用する場合は無効化を推奨
+# federation_domain_whitelist: []
+# allow_public_rooms_over_federation: false
+
+# --- ログ ---
+log_config: "/data/log.config"
+
+# --- その他 ---
+report_stats: false
+signing_key_path: "/data/signing.key"
+trusted_key_servers:
+  - server_name: "matrix.org"
+suppress_key_server_warning: true

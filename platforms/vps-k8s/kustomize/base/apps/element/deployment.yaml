@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: element
+  labels:
+    app.kubernetes.io/name: element
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: element
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: element
+        app.kubernetes.io/component: app
+        ofc/network: frontend
+    spec:
+      containers:
+        - name: element
+          image: vectorim/element-web:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: element-config

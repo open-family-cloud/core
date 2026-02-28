@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    app.kubernetes.io/name: postgres
+data:
+  init-databases.sh: |
+    #!/bin/bash
+    set -e
+
+    create_db_and_user() {
+        local db=$1
+        local user=$2
+        local password=$3
+
+        echo "Creating database '$db' with user '$user'"
+
+        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<-EOSQL
+            CREATE USER ${user} WITH PASSWORD '${password}';
+            CREATE DATABASE ${db} WITH OWNER ${user}
+                ENCODING 'UTF8'
+                LC_COLLATE='C'
+                LC_CTYPE='C'
+                TEMPLATE template0;
+            GRANT ALL PRIVILEGES ON DATABASE ${db} TO ${user};
+    EOSQL
+    }
+
+    create_db_and_user \
+        "${POSTGRES_NEXTCLOUD_DB}" \
+        "${POSTGRES_NEXTCLOUD_USER}" \
+        "${POSTGRES_NEXTCLOUD_PASSWORD}"
+
+    create_db_and_user \
+        "${POSTGRES_SYNAPSE_DB}" \
+        "${POSTGRES_SYNAPSE_USER}" \
+        "${POSTGRES_SYNAPSE_PASSWORD}"
+
+    create_db_and_user \
+        "${POSTGRES_VAULTWARDEN_DB}" \
+        "${POSTGRES_VAULTWARDEN_USER}" \
+        "${POSTGRES_VAULTWARDEN_PASSWORD}"
+
+    echo "All databases initialized."

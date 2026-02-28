@@ -1,0 +1,37 @@
+# Linode — 設定例
+# このファイルをコピーして terraform.tfvars として編集してください
+# cp terraform.tfvars.example terraform.tfvars
+
+# === 認証 ===
+# Linode API トークン (https://cloud.linode.com/profile/tokens)
+# 環境変数 LINODE_TOKEN でも設定可能
+linode_token = "your-linode-api-token"
+
+# === 基本設定 ===
+domain         = "family.example.com"
+region         = "ap-northeast"  # 東京
+deploy_pattern = "compose"       # "compose" または "k8s"
+
+# === SSH ===
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# === VPS ===
+vps_plan  = "g6-standard-2"     # 2 vCPU / 4 GB RAM (compose 用)
+# vps_plan = "g6-standard-4"    # 4 vCPU / 8 GB RAM (k8s 用)
+vps_label = "ofc-server"
+vps_image = "linode/ubuntu24.04"
+
+# root パスワード (cloud-init でパスワード認証を無効化するため初回のみ使用)
+root_pass = "change-me-strong-password"
+
+# === Block Storage ===
+block_storage_size_gb = 40
+
+# === Object Storage ===
+object_storage_region = "ap-south-1"    # シンガポール
+# s3_bucket_prefix    = ""             # 空ならドメイン名ベース (example.com → example-com)
+
+# === Firewall ===
+# SSH を特定の IP に制限する場合:
+# allowed_ssh_cidrs = ["203.0.113.0/32"]
+allowed_ssh_cidrs = ["0.0.0.0/0"]
