@@ -27,7 +27,8 @@ jobs:
             platforms/home-static-ip/scripts/*.sh \
             platforms/home-tunnel/home/scripts/*.sh \
             platforms/home-tunnel/vps/scripts/*.sh \
-            platforms/vps-k8s/scripts/*.sh
+            platforms/vps-k8s/scripts/*.sh \
+            infra/scripts/*.sh
 
       - name: shfmt
         run: |
@@ -67,6 +68,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      - run: terraform -chdir=infra/${{ matrix.provider }} init -backend=false
+      - name: terraform init (リトライ付き)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: terraform -chdir=infra/${{ matrix.provider }} init -backend=false
       - run: terraform -chdir=infra/${{ matrix.provider }} validate
       - run: terraform -chdir=infra/${{ matrix.provider }} fmt -check -recursive
