@@ -76,6 +76,12 @@ variable "object_storage_cluster_id" {
   default     = "nrt1"
 }
 
+variable "object_storage_tier_id" {
+  description = "Vultr Object Storage ティア ID (1 = Performance)"
+  type        = number
+  default     = 1
+}
+
 variable "s3_bucket_prefix" {
   description = "S3 バケット名のプレフィックス (空の場合はドメイン名から自動生成: example.com → example-com)"
   type        = string

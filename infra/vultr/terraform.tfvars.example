@@ -26,6 +26,7 @@ block_storage_size_gb = 40
 
 # === Object Storage ===
 object_storage_cluster_id = "nrt1"
+# object_storage_tier_id  = 1     # 1 = Performance (デフォルト)
 # s3_bucket_prefix        = ""     # 空ならドメイン名ベース (example.com → example-com)
 
 # === Firewall ===

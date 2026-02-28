@@ -33,6 +33,7 @@ jobs:
       - name: shfmt
         run: |
           go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          export PATH="$PATH:$(go env GOPATH)/bin"
           shfmt -i 4 -ci -bn -d \
             scripts/ \
             config/postgres/init-databases.sh \
