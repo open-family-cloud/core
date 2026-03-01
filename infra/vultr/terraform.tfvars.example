@@ -25,7 +25,8 @@ vps_os_id = 2284                # Ubuntu 24.04 LTS
 block_storage_size_gb = 40
 
 # === Object Storage ===
-object_storage_cluster_id = "nrt1"
+# クラスタ ID は数値。確認: curl -H "Authorization: Bearer $KEY" https://api.vultr.com/v2/object-storage/clusters | jq
+object_storage_cluster_id = 16  # 要変更: 実際のクラスタ ID に置き換えてください
 # object_storage_tier_id  = 1     # 1 = Performance (デフォルト)
 # s3_bucket_prefix        = ""     # 空ならドメイン名ベース (example.com → example-com)
 

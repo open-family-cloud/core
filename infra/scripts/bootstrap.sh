@@ -84,7 +84,7 @@ set_defaults() {
     VULTR_REGION="${VULTR_REGION:-nrt}"
     VULTR_PLAN="${VULTR_PLAN:-vc2-2c-4gb}"
     VULTR_OS_ID="${VULTR_OS_ID:-2284}"
-    VULTR_OBJECT_STORAGE_CLUSTER="${VULTR_OBJECT_STORAGE_CLUSTER:-nrt1}"
+    VULTR_OBJECT_STORAGE_CLUSTER="${VULTR_OBJECT_STORAGE_CLUSTER:-16}"
     VULTR_OBJECT_STORAGE_TIER="${VULTR_OBJECT_STORAGE_TIER:-1}"
     LINODE_REGION="${LINODE_REGION:-ap-northeast}"
     LINODE_PLAN="${LINODE_PLAN:-g6-standard-2}"
@@ -130,7 +130,7 @@ vps_plan                  = "$VULTR_PLAN"
 vps_label                 = "$VPS_LABEL"
 vps_os_id                 = $VULTR_OS_ID
 block_storage_size_gb     = $BLOCK_STORAGE_SIZE_GB
-object_storage_cluster_id = "$VULTR_OBJECT_STORAGE_CLUSTER"
+object_storage_cluster_id = $VULTR_OBJECT_STORAGE_CLUSTER
 object_storage_tier_id    = $VULTR_OBJECT_STORAGE_TIER
 s3_bucket_prefix          = "$S3_BUCKET_PREFIX"
 allowed_ssh_cidrs         = $(cidrs_to_hcl "$ALLOWED_SSH_CIDRS")
@@ -432,7 +432,7 @@ main() {
 
     # プロバイダ別バリデーション
     case "$PROVIDER" in
-        vultr) validate_config VULTR_API_KEY ;;
+        vultr) validate_config VULTR_API_KEY VULTR_OBJECT_STORAGE_CLUSTER ;;
         linode) validate_config LINODE_TOKEN LINODE_ROOT_PASS ;;
         *)
             err "PROVIDER は 'vultr' または 'linode'"

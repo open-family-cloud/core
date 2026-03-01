@@ -71,9 +71,8 @@ variable "block_storage_label" {
 
 # === Object Storage ===
 variable "object_storage_cluster_id" {
-  description = "Vultr Object Storage クラスタ ID (例: nrt1)"
-  type        = string
-  default     = "nrt1"
+  description = "Vultr Object Storage クラスタ ID (数値。API で確認: curl -H 'Authorization: Bearer $KEY' https://api.vultr.com/v2/object-storage/clusters)"
+  type        = number
 }
 
 variable "object_storage_tier_id" {
