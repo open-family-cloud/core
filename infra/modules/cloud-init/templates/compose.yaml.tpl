@@ -38,6 +38,9 @@ runcmd:
   # --- ユーザーを docker グループに追加 ---
   - usermod -aG docker "${username}"
 
+  # --- rclone インストール (Jellyfin S3 マウント用) ---
+  - curl -fsSL https://rclone.org/install.sh | bash
+
   # --- Block Storage マウント ---
   - |
     DEVICE="${block_device}"

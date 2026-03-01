@@ -54,14 +54,15 @@ if [[ "${JELLYFIN_MEDIA}" == /mnt/s3/* ]]; then
         warn "rclone がインストールされていません"
         warn "S3 マウントをスキップします。手動でインストール後に再実行してください:"
         warn "  curl https://rclone.org/install.sh | sudo bash"
-        mkdir -p "${JELLYFIN_MEDIA}"
+        sudo mkdir -p "${JELLYFIN_MEDIA}"
+        sudo chown "$(id -un):$(id -gn)" "${JELLYFIN_MEDIA}"
     else
         log "rclone で S3 マウントを設定中..."
 
         S3_BUCKET_JELLYFIN="${S3_BUCKET_JELLYFIN:?S3_BUCKET_JELLYFIN が未設定です}"
 
-        mkdir -p /root/.config/rclone
-        cat >/root/.config/rclone/rclone.conf <<RCLONE_EOF
+        sudo mkdir -p /root/.config/rclone
+        sudo tee /root/.config/rclone/rclone.conf >/dev/null <<RCLONE_EOF
 [jellyfin-s3]
 type = s3
 provider = Other
@@ -73,14 +74,15 @@ region = ${S3_REGION}
 acl = private
 RCLONE_EOF
 
+        sudo mkdir -p "${JELLYFIN_MEDIA}"
         sed -e "s|MOUNT_PATH_PLACEHOLDER|${JELLYFIN_MEDIA}|g" \
             -e "s|BUCKET_PLACEHOLDER|${S3_BUCKET_JELLYFIN}|g" \
             "${PROJECT_ROOT}/config/rclone/rclone-jellyfin.service" \
-            >/etc/systemd/system/rclone-jellyfin.service
+            | sudo tee /etc/systemd/system/rclone-jellyfin.service >/dev/null
 
-        systemctl daemon-reload
-        systemctl enable rclone-jellyfin.service
-        systemctl start rclone-jellyfin.service
+        sudo systemctl daemon-reload
+        sudo systemctl enable rclone-jellyfin.service
+        sudo systemctl start rclone-jellyfin.service
 
         log "rclone マウント: OK (${JELLYFIN_MEDIA})"
     fi
