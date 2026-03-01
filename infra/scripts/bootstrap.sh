@@ -221,6 +221,15 @@ wait_for_ssh() {
 wait_for_cloud_init() {
     log "cloud-init 完了を待機中 (Docker/Block Storage 等のセットアップ)..."
     ssh_cmd "sudo cloud-init status --wait" >/dev/null 2>&1
+
+    local ci_status
+    ci_status=$(ssh_cmd "sudo cloud-init status")
+    if echo "$ci_status" | grep -qi "error\|degraded"; then
+        err "cloud-init でエラーが発生しました:"
+        ssh_cmd "sudo cloud-init status --long" || true
+        exit 1
+    fi
+
     log "cloud-init 完了"
 }
 
