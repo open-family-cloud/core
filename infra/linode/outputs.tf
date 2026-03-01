@@ -54,7 +54,7 @@ output "s3_bucket_backup" {
 
 output "block_storage_mount_point" {
   description = "Block Storage のマウントポイント"
-  value       = "/mnt/blockstorage"
+  value       = "/mnt/block-storage"
 }
 
 output "env_vars" {
@@ -71,6 +71,6 @@ output "env_vars" {
     S3_BUCKET_SYNAPSE   = "${local.s3_bucket_prefix}-synapse-media"
     S3_BUCKET_JELLYFIN  = "${local.s3_bucket_prefix}-jellyfin-media"
     S3_BUCKET_BACKUP    = "${local.s3_bucket_prefix}-backup"
-    MAIL_STORAGE_PATH   = "/mnt/blockstorage/mail"
+    MAIL_STORAGE_PATH   = "/mnt/block-storage/mail"
   }
 }

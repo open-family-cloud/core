@@ -10,7 +10,7 @@ resource "linode_volume" "ofc" {
 
 # --- Object Storage Key ---
 resource "linode_object_storage_key" "ofc" {
-  label = "${var.vps_label}-s3-key"
+  label = "ofc-object-storage-key"
 
   dynamic "bucket_access" {
     for_each = toset(var.s3_buckets)

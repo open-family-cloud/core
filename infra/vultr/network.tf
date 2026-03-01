@@ -1,7 +1,7 @@
 # Vultr — ファイアウォール
 
 resource "vultr_firewall_group" "ofc" {
-  description = "Open Family Cloud ファイアウォール"
+  description = "ofc-firewall"
 }
 
 # --- SSH ---

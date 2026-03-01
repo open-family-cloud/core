@@ -11,7 +11,7 @@ locals {
 
 # --- SSH Key ---
 resource "vultr_ssh_key" "ofc" {
-  name    = "${var.vps_label}-key"
+  name    = "${var.vps_label}-ssh-key"
   ssh_key = file(pathexpand(var.ssh_public_key_path))
 }
 
@@ -23,6 +23,6 @@ module "cloud_init" {
   hostname       = var.vps_label
   ssh_public_key = file(pathexpand(var.ssh_public_key_path))
   block_device   = "/dev/vdb"
-  mount_point    = "/mnt/blockstorage"
+  mount_point    = "/mnt/block-storage"
   username       = "ofc"
 }

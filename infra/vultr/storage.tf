@@ -13,7 +13,7 @@ resource "vultr_block_storage" "ofc" {
 resource "vultr_object_storage" "ofc" {
   cluster_id = var.object_storage_cluster_id
   tier_id    = var.object_storage_tier_id
-  label      = "${var.vps_label}-s3"
+  label      = "ofc-object-storage"
 }
 
 # --- S3 バケット作成 (Vultr は Terraform リソースがないため aws-cli で作成) ---

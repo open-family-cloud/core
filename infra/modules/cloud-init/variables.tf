@@ -30,7 +30,7 @@ variable "block_device" {
 variable "mount_point" {
   description = "Block Storage のマウントポイント"
   type        = string
-  default     = "/mnt/blockstorage"
+  default     = "/mnt/block-storage"
 }
 
 variable "username" {

@@ -11,7 +11,7 @@ locals {
 
 # --- SSH Key ---
 resource "linode_sshkey" "ofc" {
-  label   = "${var.vps_label}-key"
+  label   = "${var.vps_label}-ssh-key"
   ssh_key = trimspace(file(pathexpand(var.ssh_public_key_path)))
 }
 
@@ -23,6 +23,6 @@ module "cloud_init" {
   hostname       = var.vps_label
   ssh_public_key = trimspace(file(pathexpand(var.ssh_public_key_path)))
   block_device   = "/dev/disk/by-id/scsi-0Linode_Volume_${var.block_storage_label}"
-  mount_point    = "/mnt/blockstorage"
+  mount_point    = "/mnt/block-storage"
   username       = "ofc"
 }

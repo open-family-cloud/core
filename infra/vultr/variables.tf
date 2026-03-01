@@ -66,7 +66,7 @@ variable "block_storage_size_gb" {
 variable "block_storage_label" {
   description = "Block Storage のラベル"
   type        = string
-  default     = "ofc-blockstorage"
+  default     = "ofc-block-storage"
 }
 
 # === Object Storage ===

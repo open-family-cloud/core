@@ -37,7 +37,7 @@ Terraform で自動プロビジョニングします。
 |---------|------|
 | VPS (Compute) | サーバー本体 |
 | SSH Key | VPS アクセス用 |
-| Block Storage | メールデータ (`/mnt/blockstorage/mail`) |
+| Block Storage | メールデータ (`/mnt/block-storage/mail`) |
 | Object Storage | S3 バケット×4 (nextcloud, synapse, jellyfin, backup) |
 | Firewall | ポート制限 (22, 80, 443, 25, 465, 587, 993, 10000/udp) |
 
@@ -222,7 +222,7 @@ VPS 作成時に cloud-init で以下が自動設定されます:
 - システム更新 + 基本パッケージ
 - Docker CE + Docker Compose プラグイン
 - `ofc` ユーザー作成 (docker グループ追加)
-- Block Storage マウント (`/mnt/blockstorage`)
+- Block Storage マウント (`/mnt/block-storage`)
 - SSH hardening (パスワード認証無効化)
 - fail2ban 設定
 - UFW ファイアウォール
