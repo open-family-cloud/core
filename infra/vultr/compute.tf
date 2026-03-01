@@ -16,5 +16,9 @@ resource "vultr_instance" "ofc" {
   ddos_protection   = false
   hostname          = var.vps_label
 
+  backups_schedule {
+    type = "daily"
+  }
+
   tags = ["ofc", var.deploy_pattern]
 }
