@@ -10,7 +10,8 @@ resource "vultr_instance" "ofc" {
   ssh_key_ids       = [vultr_ssh_key.ofc.id]
   firewall_group_id = vultr_firewall_group.ofc.id
   enable_ipv6       = true
-  backups           = "disabled"
+  backups           = "enabled"
+  reserved_ip_id    = vultr_reserved_ip.ofc.id
   activation_email  = false
   ddos_protection   = false
   hostname          = var.vps_label

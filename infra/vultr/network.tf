@@ -1,3 +1,11 @@
+# Vultr — Reserved IP
+
+resource "vultr_reserved_ip" "ofc" {
+  region  = var.region
+  label   = "ofc-reserved-ip"
+  ip_type = "v4"
+}
+
 # Vultr — ファイアウォール
 
 resource "vultr_firewall_group" "ofc" {

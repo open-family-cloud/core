@@ -1,8 +1,8 @@
 # Vultr — 出力
 
 output "vps_public_ip" {
-  description = "VPS のパブリック IP アドレス"
-  value       = vultr_instance.ofc.main_ip
+  description = "VPS のパブリック IP アドレス (Reserved IP)"
+  value       = vultr_reserved_ip.ofc.subnet
 }
 
 output "vps_id" {
@@ -61,8 +61,8 @@ output "env_vars" {
   description = ".env ファイルに書き込むための変数マップ"
   sensitive   = true
   value = {
-    VPS_IP              = vultr_instance.ofc.main_ip
-    JVB_ADVERTISE_IP    = vultr_instance.ofc.main_ip
+    VPS_IP              = vultr_reserved_ip.ofc.subnet
+    JVB_ADVERTISE_IP    = vultr_reserved_ip.ofc.subnet
     S3_ENDPOINT         = "https://${vultr_object_storage.ofc.s3_hostname}"
     S3_ACCESS_KEY       = vultr_object_storage.ofc.s3_access_key
     S3_SECRET_KEY       = vultr_object_storage.ofc.s3_secret_key
