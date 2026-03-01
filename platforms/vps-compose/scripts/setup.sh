@@ -100,7 +100,7 @@ if [[ ! -f "${PROJECT_ROOT}/config/synapse/signing.key" ]]; then
     log "Synapse 署名鍵を生成中..."
 
     SYNAPSE_TMP="$(mktemp -d)"
-    cleanup_synapse_tmp() { rm -rf "$SYNAPSE_TMP"; }
+    cleanup_synapse_tmp() { sudo rm -rf "$SYNAPSE_TMP"; }
     trap cleanup_synapse_tmp EXIT
 
     docker run --rm \
@@ -109,11 +109,12 @@ if [[ ! -f "${PROJECT_ROOT}/config/synapse/signing.key" ]]; then
         -e SYNAPSE_REPORT_STATS=no \
         matrixdotorg/synapse:latest generate
 
-    cp "${SYNAPSE_TMP}/${SYNAPSE_SERVER_NAME}.signing.key" \
+    sudo cp "${SYNAPSE_TMP}/${SYNAPSE_SERVER_NAME}.signing.key" \
         "${PROJECT_ROOT}/config/synapse/signing.key"
+    sudo chown "$(id -u):$(id -g)" "${PROJECT_ROOT}/config/synapse/signing.key"
 
     trap - EXIT
-    rm -rf "$SYNAPSE_TMP"
+    sudo rm -rf "$SYNAPSE_TMP"
 
     log "Synapse 署名鍵の生成: OK"
 fi
