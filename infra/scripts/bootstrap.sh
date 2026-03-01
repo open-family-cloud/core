@@ -3,7 +3,8 @@
 # Open Family Cloud — ワンコマンドブートストラップ
 #
 # 使い方:
-#   ./bootstrap.sh <config-file>
+#   ./bootstrap.sh <config-file>           — デプロイ
+#   ./bootstrap.sh destroy <config-file>   — 全リソース削除
 #
 # 1つの設定ファイルから Terraform (Vultr/Linode + Cloudflare) →
 # VPS セットアップ → アプリ起動 → DKIM DNS 登録まで自動実行する。
@@ -411,13 +412,64 @@ show_summary() {
 }
 
 # ============================================================
+# Destroy — 全リソース削除
+# ============================================================
+
+destroy_all() {
+    echo ""
+    echo "========================================================"
+    warn "全リソースを削除します"
+    echo "  プロバイダ: $PROVIDER"
+    echo "  ドメイン:   $DOMAIN"
+    echo "========================================================"
+    echo ""
+
+    # Cloudflare DNS を先に削除（VPS IP が必要なため、まだ VPS がある間に実行）
+    if [[ -d "$INFRA_DIR/cloudflare/.terraform" ]]; then
+        log "Cloudflare DNS レコードを削除中..."
+
+        # VPS IP を terraform output から取得（まだ state に残っていれば）
+        local vps_ip=""
+        if [[ -f "$INFRA_DIR/$PROVIDER/terraform.tfstate" ]]; then
+            vps_ip=$(terraform -chdir="$INFRA_DIR/$PROVIDER" output -raw vps_public_ip 2>/dev/null || true)
+        fi
+        # state にない場合はダミー IP（destroy には実際の IP は不要）
+        vps_ip="${vps_ip:-0.0.0.0}"
+
+        terraform -chdir="$INFRA_DIR/cloudflare" destroy -auto-approve -input=false \
+            -var="cloudflare_api_token=$CLOUDFLARE_API_TOKEN" \
+            -var="zone_id=$CLOUDFLARE_ZONE_ID" \
+            -var="domain=$DOMAIN" \
+            -var="vps_ip=$vps_ip" \
+            -var="proxied=${CLOUDFLARE_PROXIED}" \
+            -var="enable_mail_dns=true" \
+            -var="mail_dkim_record=" || warn "Cloudflare destroy でエラーが発生しましたが続行します"
+
+        log "Cloudflare DNS 削除完了"
+    else
+        log "Cloudflare: terraform 未初期化のためスキップ"
+    fi
+
+    # プロバイダリソースを削除（VPS, Block Storage, Object Storage, Firewall, SSH Key）
+    if [[ -d "$INFRA_DIR/$PROVIDER/.terraform" ]]; then
+        log "$PROVIDER リソースを削除中..."
+        terraform -chdir="$INFRA_DIR/$PROVIDER" destroy -auto-approve -input=false || warn "$PROVIDER destroy でエラーが発生しましたが続行します"
+        log "$PROVIDER リソース削除完了"
+    else
+        log "$PROVIDER: terraform 未初期化のためスキップ"
+    fi
+
+    echo ""
+    echo "========================================================"
+    log "全リソースの削除が完了しました"
+    echo "========================================================"
+}
+
+# ============================================================
 # メイン
 # ============================================================
 
-main() {
-    load_config "${1:-}"
-    set_defaults
-
+main_deploy() {
     # 共通バリデーション
     validate_config \
         PROVIDER DOMAIN ACME_EMAIL \
@@ -469,6 +521,55 @@ main() {
     deploy_application
     setup_dkim_dns
     show_summary
+}
+
+main_destroy() {
+    # destroy に必要な最小バリデーション
+    validate_config PROVIDER DOMAIN CLOUDFLARE_API_TOKEN CLOUDFLARE_ZONE_ID
+
+    case "$PROVIDER" in
+        vultr) validate_config VULTR_API_KEY ;;
+        linode) validate_config LINODE_TOKEN ;;
+        *)
+            err "PROVIDER は 'vultr' または 'linode'"
+            exit 1
+            ;;
+    esac
+
+    # ツール確認
+    command -v terraform &>/dev/null || {
+        err "terraform が見つかりません"
+        exit 1
+    }
+
+    destroy_all
+}
+
+main() {
+    local action="deploy"
+    local config_file=""
+
+    # 引数の解析: destroy <config> or <config>
+    if [[ "${1:-}" == "destroy" ]]; then
+        action="destroy"
+        config_file="${2:-}"
+    else
+        config_file="${1:-}"
+    fi
+
+    if [[ -z "$config_file" ]]; then
+        err "使い方: $0 <config-file>"
+        err "        $0 destroy <config-file>"
+        exit 1
+    fi
+
+    load_config "$config_file"
+    set_defaults
+
+    case "$action" in
+        deploy) main_deploy ;;
+        destroy) main_destroy ;;
+    esac
 }
 
 main "$@"

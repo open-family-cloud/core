@@ -4,7 +4,7 @@ PROJECT_DIR := $(shell pwd)
 PROVIDER ?= vultr
 
 .PHONY: help install-tools lint format test check check-compose check-k8s
-.PHONY: tf-init tf-plan tf-apply tf-destroy tf-validate bootstrap
+.PHONY: tf-init tf-plan tf-apply tf-destroy tf-validate bootstrap destroy
 
 install-tools: ## 開発ツールをインストール
 	uv tool install pre-commit
@@ -57,6 +57,9 @@ check-k8s: ## Kustomize マニフェストのバリデーション
 
 bootstrap: ## ワンコマンドデプロイ (CONFIG=infra/bootstrap.conf)
 	infra/scripts/bootstrap.sh $(or $(CONFIG),infra/bootstrap.conf)
+
+destroy: ## 全リソース削除 (CONFIG=infra/bootstrap.conf)
+	infra/scripts/bootstrap.sh destroy $(or $(CONFIG),infra/bootstrap.conf)
 
 tf-init: ## Terraform 初期化 (PROVIDER=vultr|linode|cloudflare)
 	cd infra/$(PROVIDER) && terraform init
