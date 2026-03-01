@@ -12,7 +12,9 @@
       "Bash(gh run:*)",
       "Bash(terraform fmt:*)",
       "Bash(chmod +x:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(make lint:*)",
+      "Bash(make test:*)"
     ]
   }
 }
